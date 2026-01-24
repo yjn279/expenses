@@ -7,7 +7,7 @@ import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
 import { BulkTransactionForm } from './components/BulkTransactionForm';
 import { normalizeMonth } from './utils/month';
-import type { ViewMode, TransactionInput, MonthString, BalanceInput } from './types';
+import type { ViewMode, TransactionInput, MonthString } from './types';
 
 function App() {
   const { data, loading, error, refetch } = useHouseholdData();
