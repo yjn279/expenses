@@ -11,6 +11,7 @@ import type { ViewMode, TransactionInput, MonthlyData } from './types';
 function App() {
   const { data, loading, error, refetch } = useHouseholdData();
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
+  const [showForm, setShowForm] = useState(false);
 
   // Get last 12 months for monthly view
   const displayData = useMemo(() => {
@@ -29,6 +30,75 @@ function App() {
       };
     }
   }, [data, viewMode]);
+
+  // Calculate selectable months (months not in monthlyData, from startMonth to two months ago)
+  const selectableMonths = useMemo(() => {
+    if (!data) return [];
+
+    // Helper function to normalize month string to YYYY-MM format
+    const normalizeMonth = (monthStr: string): string | null => {
+      if (!monthStr || typeof monthStr !== 'string') return null;
+      
+      // Already in YYYY-MM format
+      if (/^\d{4}-\d{2}$/.test(monthStr)) {
+        return monthStr;
+      }
+      
+      // Try to parse as date (handles Date strings like 'Mon Sep 01 2025...' or ISO format)
+      const date = new Date(monthStr);
+      if (!isNaN(date.getTime())) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      }
+      
+      return null;
+    };
+
+    // Normalize all months in monthlyData
+    const existingMonths = new Set(
+      data.monthlyData
+        .map((d) => normalizeMonth(d.month))
+        .filter((m): m is string => m !== null)
+    );
+    
+    // Normalize startMonth to YYYY-MM format
+    let startMonth: string | null = normalizeMonth(data.settings.startMonth);
+    
+    // Fallback to earliest month in data if startMonth is still invalid
+    if (!startMonth && data.monthlyData.length > 0) {
+      startMonth = normalizeMonth(data.monthlyData[0].month);
+    }
+    
+    if (!startMonth || !/^\d{4}-\d{2}$/.test(startMonth)) {
+      return [];
+    }
+
+    // Calculate two months ago
+    const now = new Date();
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+
+    // Generate all months from startMonth to twoMonthsAgo
+    const months: string[] = [];
+    const [startYear, startMonthNum] = startMonth.split('-').map(Number);
+    let currentYear = startYear;
+    let currentMonth = startMonthNum;
+
+    const endYear = twoMonthsAgo.getFullYear();
+    const endMonth = twoMonthsAgo.getMonth() + 1;
+
+    while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
+      const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+      if (!existingMonths.has(monthStr)) {
+        months.push(monthStr);
+      }
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+    }
+
+    return months;
+  }, [data]);
 
   const handleAddTransactions = async (inputs: TransactionInput[]): Promise<void> => {
     await addTransactions(inputs);
@@ -89,21 +159,35 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>家計簿ダッシュボード</h1>
-        <div className="header-actions">
-          <button onClick={refetch} className="btn-refresh">
-            更新
-          </button>
-        </div>
+        {selectableMonths.length > 0 && (
+          <div className="header-actions">
+            <button onClick={() => setShowForm(true)} className="btn-input">
+              入力
+            </button>
+          </div>
+        )}
       </header>
 
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowForm(false)}>
+              ×
+            </button>
+            <BulkTransactionForm
+              expenseCategories={data.expenseCategories || data.categories}
+              incomeCategories={data.incomeCategories || []}
+              selectableMonths={selectableMonths}
+              onSubmit={async (inputs) => {
+                await handleAddTransactions(inputs);
+                setShowForm(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <main className="app-main">
-        <section className="form-section">
-          <BulkTransactionForm
-            expenseCategories={data.expenseCategories || data.categories}
-            incomeCategories={data.incomeCategories || []}
-            onSubmit={handleAddTransactions}
-          />
-        </section>
 
         <section className="view-toggle">
           <button

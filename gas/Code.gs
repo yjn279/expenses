@@ -182,25 +182,28 @@ function extractCategories(transactions) {
 }
 
 /**
- * カテゴリ一覧を支出・収入別に抽出
+ * カテゴリ一覧を支出・収入別に抽出（出現順を保持）
  */
 function extractCategoriesByType(transactions) {
-  const expenseSet = {};
-  const incomeSet = {};
+  const expenseCategories = [];
+  const incomeCategories = [];
+  const seen = { expense: {}, income: {} };
 
   transactions.forEach(function(t) {
     if (!t.category) return;
 
-    if (t.type === 'expense') {
-      expenseSet[t.category] = true;
-    } else if (t.type === 'income') {
-      incomeSet[t.category] = true;
+    if (t.type === 'expense' && !seen.expense[t.category]) {
+      seen.expense[t.category] = true;
+      expenseCategories.push(t.category);
+    } else if (t.type === 'income' && !seen.income[t.category]) {
+      seen.income[t.category] = true;
+      incomeCategories.push(t.category);
     }
   });
 
   return {
-    expenseCategories: Object.keys(expenseSet).sort(),
-    incomeCategories: Object.keys(incomeSet).sort()
+    expenseCategories: expenseCategories,
+    incomeCategories: incomeCategories
   };
 }
 

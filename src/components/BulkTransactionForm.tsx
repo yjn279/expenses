@@ -5,31 +5,19 @@ import { CategoryAmountInput } from './CategoryAmountInput';
 interface BulkTransactionFormProps {
   expenseCategories: string[];
   incomeCategories: string[];
+  selectableMonths: string[];
   onSubmit: (inputs: TransactionInput[]) => Promise<void>;
 }
 
 const MAX_AMOUNT = 1_000_000_000; // 10億
 
-// Get current month in YYYY-MM format
-function getCurrentMonth(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
-
-// Validate month is not in the future
-function isValidMonth(month: string): boolean {
-  const current = getCurrentMonth();
-  return month <= current;
-}
-
 export function BulkTransactionForm({
   expenseCategories,
   incomeCategories,
+  selectableMonths,
   onSubmit,
 }: BulkTransactionFormProps) {
-  const [month, setMonth] = useState<string>(getCurrentMonth());
+  const [month, setMonth] = useState<string>(selectableMonths[0] || '');
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -61,8 +49,8 @@ export function BulkTransactionForm({
     setSuccess(false);
 
     // Validation
-    if (!month || !isValidMonth(month)) {
-      setError('有効な月を選択してください（未来の月は選択できません）');
+    if (!month || !selectableMonths.includes(month)) {
+      setError('有効な月を選択してください');
       return;
     }
 
@@ -131,14 +119,18 @@ export function BulkTransactionForm({
 
       <div className="form-row">
         <label htmlFor="bulk-month">月</label>
-        <input
+        <select
           id="bulk-month"
-          type="month"
           value={month}
-          max={getCurrentMonth()}
           onChange={(e) => setMonth(e.target.value)}
           required
-        />
+        >
+          {selectableMonths.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
       </div>
 
       {!hasCategories ? (
