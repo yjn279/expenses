@@ -1,19 +1,12 @@
-import { useState, useMemo, type FormEvent } from 'react';
-import type { TransactionInput, MonthString } from '../types';
+import { useState, useMemo, useEffect, type FormEvent } from 'react';
+import type { TransactionInput, MonthString, BalanceInput } from '../types';
 import { CategoryAmountInput } from './CategoryAmountInput';
 
-/**
- * 一括取引入力フォームのプロパティ
- */
 interface BulkTransactionFormProps {
-  /** 支出カテゴリの配列 */
   expenseCategories: string[];
-  /** 収入カテゴリの配列 */
   incomeCategories: string[];
-  /** 選択可能な月の配列 */
   selectableMonths: MonthString[];
-  /** フォーム送信時のコールバック関数 */
-  onSubmit: (inputs: TransactionInput[]) => Promise<void>;
+  onSubmit: (inputs: TransactionInput[], balance: BalanceInput) => Promise<void>;
 }
 
 const MAX_AMOUNT = 1_000_000_000;
@@ -34,6 +27,38 @@ function validateCategory(category: string): string | null {
   return null;
 }
 
+function validateAmount(
+  amountStr: string,
+  fieldName: string
+): { isValid: boolean; error: string | null; amount: number | null } {
+  if (!amountStr || amountStr === '') {
+    return { isValid: false, error: `${fieldName}を入力してください`, amount: null };
+  }
+
+  const amount = parseInt(amountStr, 10);
+  if (isNaN(amount)) {
+    return { isValid: false, error: `${fieldName}は数値で入力してください`, amount: null };
+  }
+
+  if (amount < 0) {
+    return { isValid: false, error: `${fieldName}は0円以上で入力してください`, amount: null };
+  }
+
+  if (amount > MAX_AMOUNT) {
+    return { isValid: false, error: `${fieldName}は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`, amount: null };
+  }
+
+  return { isValid: true, error: null, amount };
+}
+
+function createInitialAmounts(categories: string[]): Record<string, string> {
+  const amounts: Record<string, string> = {};
+  for (const cat of categories) {
+    amounts[cat] = '0';
+  }
+  return amounts;
+}
+
 export function BulkTransactionForm({
   expenseCategories,
   incomeCategories,
@@ -43,11 +68,41 @@ export function BulkTransactionForm({
   const [month, setMonth] = useState<MonthString | ''>(
     selectableMonths.length > 0 ? selectableMonths[0] : ''
   );
-  const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
-  const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>({});
+  
+  const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>(() =>
+    createInitialAmounts(expenseCategories)
+  );
+  const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>(() =>
+    createInitialAmounts(incomeCategories)
+  );
+  const [balance, setBalance] = useState<string>('0');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  
+  useEffect(() => {
+    setExpenseAmounts((prev) => {
+      const updated = createInitialAmounts(expenseCategories);
+      for (const cat of expenseCategories) {
+        if (prev[cat] !== undefined) {
+          updated[cat] = prev[cat];
+        }
+      }
+      return updated;
+    });
+  }, [expenseCategories]);
+  
+  useEffect(() => {
+    setIncomeAmounts((prev) => {
+      const updated = createInitialAmounts(incomeCategories);
+      for (const cat of incomeCategories) {
+        if (prev[cat] !== undefined) {
+          updated[cat] = prev[cat];
+        }
+      }
+      return updated;
+    });
+  }, [incomeCategories]);
 
   const handleExpenseChange = (category: string, value: string) => {
     setExpenseAmounts((prev) => ({ ...prev, [category]: value }));
@@ -58,13 +113,12 @@ export function BulkTransactionForm({
   };
 
   const filledCount = useMemo(() => {
-    const expenseFilled = Object.values(expenseAmounts).filter(
-      (v) => v && parseInt(v, 10) > 0
-    ).length;
-    const incomeFilled = Object.values(incomeAmounts).filter(
-      (v) => v && parseInt(v, 10) > 0
-    ).length;
-    return expenseFilled + incomeFilled;
+    const countValid = (amounts: Record<string, string>): number => {
+      return Object.values(amounts).filter(
+        (v) => v !== undefined && v !== '' && parseInt(v, 10) >= 0
+      ).length;
+    };
+    return countValid(expenseAmounts) + countValid(incomeAmounts);
   }, [expenseAmounts, incomeAmounts]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -94,18 +148,18 @@ export function BulkTransactionForm({
           return false;
         }
 
-        const amountStr = amounts[category];
-        if (!amountStr) continue;
-
-        const amount = parseInt(amountStr, 10);
-        if (amount <= 0) continue;
-
-        if (amount > MAX_AMOUNT) {
-          setError(`${category}の金額は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`);
+        const validation = validateAmount(amounts[category], category);
+        if (!validation.isValid) {
+          setError(validation.error!);
           return false;
         }
 
-        transactions.push({ month: validMonth, category, type, amount });
+        transactions.push({
+          month: validMonth,
+          category,
+          type,
+          amount: validation.amount!,
+        });
       }
       return true;
     }
@@ -118,17 +172,24 @@ export function BulkTransactionForm({
       return;
     }
 
-    if (transactions.length === 0) {
-      setError('少なくとも1つの金額を入力してください');
+    const balanceValidation = validateAmount(balance, '残高');
+    if (!balanceValidation.isValid) {
+      setError(balanceValidation.error!);
       return;
     }
 
+    const balanceInput: BalanceInput = {
+      month: validMonth,
+      balance: balanceValidation.amount!,
+    };
+
     setSubmitting(true);
     try {
-      await onSubmit(transactions);
+      await onSubmit(transactions, balanceInput);
       setSuccess(true);
-      setExpenseAmounts({});
-      setIncomeAmounts({});
+      setExpenseAmounts(createInitialAmounts(expenseCategories));
+      setIncomeAmounts(createInitialAmounts(incomeCategories));
+      setBalance('0');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'エラーが発生しました');
     } finally {
@@ -164,6 +225,19 @@ export function BulkTransactionForm({
         </select>
       </div>
 
+      <div className="form-row">
+        <label htmlFor="bulk-balance">残高</label>
+        <input
+          id="bulk-balance"
+          type="number"
+          min="0"
+          max={MAX_AMOUNT}
+          value={balance}
+          onChange={(e) => setBalance(e.target.value)}
+          required
+        />
+      </div>
+
       {!hasCategories ? (
         <div className="no-categories-message">
           カテゴリがありません。P/Lシートにデータを追加してください。
@@ -178,8 +252,9 @@ export function BulkTransactionForm({
                   <CategoryAmountInput
                     key={`expense-${category}`}
                     category={category}
-                    value={expenseAmounts[category] || ''}
+                    value={expenseAmounts[category] || '0'}
                     onChange={handleExpenseChange}
+                    required
                   />
                 ))}
               </div>
@@ -194,8 +269,9 @@ export function BulkTransactionForm({
                   <CategoryAmountInput
                     key={`income-${category}`}
                     category={category}
-                    value={incomeAmounts[category] || ''}
+                    value={incomeAmounts[category] || '0'}
                     onChange={handleIncomeChange}
+                    required
                   />
                 ))}
               </div>

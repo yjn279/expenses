@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import './App.css';
 import { useHouseholdData } from './hooks/useHouseholdData';
-import { addTransactions } from './api/household';
+import { addTransactions, updateBalance } from './api/household';
 import { TotalAssetsChart } from './components/TotalAssetsChart';
 import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
@@ -30,10 +30,9 @@ function App() {
     };
   }, [data, viewMode]);
 
-  // Calculate selectable months: months from startMonth to (current date - 2 months)
-  // that are not already present in monthlyData
   const selectableMonths = useMemo(() => {
     if (!data) return [];
+
     const existingMonths = new Set(
       data.monthlyData
         .map((d) => normalizeMonth(d.month))
@@ -44,9 +43,7 @@ function App() {
     if (!startMonth && data.monthlyData.length > 0) {
       startMonth = normalizeMonth(data.monthlyData[0].month);
     }
-    if (!startMonth) {
-      return [];
-    }
+    if (!startMonth) return [];
 
     const now = new Date();
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
@@ -54,7 +51,6 @@ function App() {
     const [startYear, startMonthNum] = startMonth.split('-').map(Number);
     let currentYear = startYear;
     let currentMonth = startMonthNum;
-
     const endYear = twoMonthsAgo.getFullYear();
     const endMonth = twoMonthsAgo.getMonth() + 1;
 
@@ -78,6 +74,25 @@ function App() {
     refetch();
   };
 
+  function renderErrorState(title: string, message: string | null = null) {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <h1>家計簿ダッシュボード</h1>
+        </header>
+        <main className="app-main">
+          <div className="error">
+            <p>{title}</p>
+            {message && <p className="error-message">{message}</p>}
+            <button onClick={refetch} className="btn-retry">
+              再読み込み
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="app">
@@ -92,40 +107,11 @@ function App() {
   }
 
   if (error) {
-    return (
-      <div className="app">
-        <header className="app-header">
-          <h1>家計簿ダッシュボード</h1>
-        </header>
-        <main className="app-main">
-          <div className="error">
-            <p>エラーが発生しました</p>
-            <p className="error-message">{error.message}</p>
-            <button onClick={refetch} className="btn-retry">
-              再読み込み
-            </button>
-          </div>
-        </main>
-      </div>
-    );
+    return renderErrorState('エラーが発生しました', error.message);
   }
 
   if (!data) {
-    return (
-      <div className="app">
-        <header className="app-header">
-          <h1>家計簿ダッシュボード</h1>
-        </header>
-        <main className="app-main">
-          <div className="error">
-            <p>データがありません</p>
-            <button onClick={refetch} className="btn-retry">
-              再読み込み
-            </button>
-          </div>
-        </main>
-      </div>
-    );
+    return renderErrorState('データがありません');
   }
 
   return (
@@ -151,8 +137,12 @@ function App() {
               expenseCategories={data.expenseCategories || data.categories}
               incomeCategories={data.incomeCategories || []}
               selectableMonths={selectableMonths}
-              onSubmit={async (inputs) => {
-                await handleAddTransactions(inputs);
+              onSubmit={async (inputs, balanceInput) => {
+                if (inputs.length > 0) {
+                  await handleAddTransactions(inputs);
+                }
+                await updateBalance(balanceInput);
+                refetch();
                 setShowForm(false);
               }}
             />
@@ -194,27 +184,7 @@ function App() {
             isMonthly={viewMode === 'monthly'}
           />
         </section>
-
-        <section className="summary-section">
-          <h3>設定情報</h3>
-          <dl className="settings-list">
-            <dt>開始月</dt>
-            <dd>{data.settings.startMonth}</dd>
-            <dt>初期残高</dt>
-            <dd>
-              {new Intl.NumberFormat('ja-JP', {
-                style: 'currency',
-                currency: 'JPY',
-                maximumFractionDigits: 0,
-              }).format(data.settings.initialBalance)}
-            </dd>
-          </dl>
-        </section>
       </main>
-
-      <footer className="app-footer">
-        <p>家計簿ダッシュボード</p>
-      </footer>
     </div>
   );
 }

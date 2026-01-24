@@ -24,37 +24,35 @@ function doGet(e) {
     const data = getHouseholdData();
     return createJsonResponse({ success: true, data: data });
   } catch (error) {
-    return createJsonResponse({ success: false, error: error.message }, 500);
+    return createJsonResponse({ success: false, error: error.message });
   }
 }
 
 /**
- * POST リクエストハンドラ - レコード追加（単一/バッチ対応）
+ * POST リクエストハンドラ - レコード追加（単一/バッチ対応）、残高更新
  */
 function doPost(e) {
   try {
     const input = JSON.parse(e.postData.contents);
 
-    // バッチ入力対応: { transactions: [...] } 形式
+    if (input.balance) {
+      updateBalance(input.balance);
+      return createJsonResponse({ success: true });
+    }
+
     if (input.transactions && Array.isArray(input.transactions)) {
       addTransactions(input.transactions);
     } else {
-      // 単一入力（後方互換）
       addTransaction(input);
     }
 
     return createJsonResponse({ success: true });
   } catch (error) {
-    return createJsonResponse({ success: false, error: error.message }, 400);
+    return createJsonResponse({ success: false, error: error.message });
   }
 }
 
-/**
- * JSONレスポンスを作成
- * @param data - レスポンスデータ
- * @param statusCode - 未使用（Google Apps ScriptのContentServiceはHTTPステータスコードを設定できないため）
- */
-function createJsonResponse(data, statusCode) {
+function createJsonResponse(data) {
   const output = ContentService.createTextOutput(JSON.stringify(data));
   output.setMimeType(ContentService.MimeType.JSON);
   return output;
@@ -77,8 +75,9 @@ function getHouseholdData() {
 
   const settings = getSettings(ss);
   const transactions = getTransactions(ss);
+  const balances = getBalances(ss);
   const categoryData = extractCategoriesByType(transactions);
-  const monthlyData = aggregateMonthlyData(transactions, settings);
+  const monthlyData = aggregateMonthlyData(transactions, settings, balances);
   const yearlyData = aggregateYearlyData(monthlyData);
 
   return {
@@ -196,11 +195,42 @@ function extractCategoriesByType(transactions) {
 }
 
 /**
+ * B/Sシートから月ごとの残高を取得
+ * @param ss - スプレッドシートオブジェクト
+ * @return {Object} 月（YYYY-MM）をキー、残高を値とするオブジェクト
+ */
+function getBalances(ss) {
+  const sheet = ss.getSheetByName(BS_SHEET_NAME);
+  if (!sheet) {
+    return {};
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const balances = {};
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const monthValue = row[0];
+    const balanceValue = row[1];
+
+    if (monthValue && typeof monthValue === 'string' && /^\d{4}-\d{2}$/.test(monthValue)) {
+      const month = formatMonth(monthValue);
+      if (month) {
+        balances[month] = Number(balanceValue) || 0;
+      }
+    }
+  }
+
+  return balances;
+}
+
+/**
  * 月次データを集計
  */
-function aggregateMonthlyData(transactions, settings) {
+function aggregateMonthlyData(transactions, settings, balances) {
   const monthlyMap = {};
 
+  // トランザクションから月次データを集計
   transactions.forEach(function(t) {
     if (!t.month) return;
 
@@ -227,20 +257,50 @@ function aggregateMonthlyData(transactions, settings) {
     }
   });
 
+  // 残高データがあるがトランザクションがない月も追加
+  Object.keys(balances).forEach(function(month) {
+    if (!monthlyMap[month]) {
+      monthlyMap[month] = {
+        month: month,
+        income: 0,
+        expense: 0,
+        categoryExpense: {}
+      };
+    }
+  });
+
   const sortedMonths = Object.keys(monthlyMap).sort();
-  let runningTotal = settings.initialBalance;
 
   const result = sortedMonths.map(function(month) {
     const data = monthlyMap[month];
     const profit = data.income - data.expense;
-    runningTotal += profit;
+    
+    let totalAssets;
+    if (balances[month] !== undefined) {
+      totalAssets = balances[month];
+    } else {
+      let previousBalance = settings.initialBalance;
+      for (let i = 0; i < sortedMonths.length; i++) {
+        if (sortedMonths[i] === month) {
+          break;
+        }
+        const prevMonth = sortedMonths[i];
+        if (balances[prevMonth] !== undefined) {
+          previousBalance = balances[prevMonth];
+        } else {
+          const prevData = monthlyMap[prevMonth];
+          previousBalance = previousBalance + (prevData.income - prevData.expense);
+        }
+      }
+      totalAssets = previousBalance + profit;
+    }
 
     return {
       month: data.month,
       income: data.income,
       expense: data.expense,
       profit: profit,
-      totalAssets: runningTotal,
+      totalAssets: totalAssets,
       categoryExpense: data.categoryExpense
     };
   });
@@ -295,13 +355,23 @@ function aggregateYearlyData(monthlyData) {
   });
 }
 
-/**
- * 単一トランザクションのバリデーション
- */
-function validateTransaction(input) {
-  if (!input.month || !/^\d{4}-\d{2}$/.test(input.month)) {
+function validateMonth(month) {
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     throw new Error('Invalid month format. Expected YYYY-MM');
   }
+}
+
+function validateAmount(amount, fieldName) {
+  if (typeof amount !== 'number' || amount < 0) {
+    throw new Error(fieldName + ' must be a non-negative number');
+  }
+  if (amount > 1000000000) {
+    throw new Error(fieldName + ' exceeds maximum allowed value');
+  }
+}
+
+function validateTransaction(input) {
+  validateMonth(input.month);
 
   if (!input.category || typeof input.category !== 'string') {
     throw new Error('Category is required');
@@ -315,13 +385,7 @@ function validateTransaction(input) {
     throw new Error('Type must be "income" or "expense"');
   }
 
-  if (typeof input.amount !== 'number' || input.amount <= 0) {
-    throw new Error('Amount must be a positive number');
-  }
-
-  if (input.amount > 1000000000) {
-    throw new Error('Amount exceeds maximum allowed value');
-  }
+  validateAmount(input.amount, 'Amount');
 }
 
 /**
@@ -371,6 +435,40 @@ function addTransactions(inputs) {
 
   const lastRow = sheet.getLastRow();
   sheet.getRange(lastRow + 1, 1, rows.length, 4).setValues(rows);
+}
+
+function updateBalance(input) {
+  validateMonth(input.month);
+  validateAmount(input.balance, 'Balance');
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(BS_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(BS_SHEET_NAME);
+  }
+
+  const data = sheet.getDataRange().getValues();
+  let found = false;
+  const month = formatMonth(input.month);
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const monthValue = row[0];
+    
+    if (monthValue && typeof monthValue === 'string' && /^\d{4}-\d{2}$/.test(monthValue)) {
+      const existingMonth = formatMonth(monthValue);
+      if (existingMonth === month) {
+        sheet.getRange(i + 1, 2).setValue(input.balance);
+        found = true;
+        break;
+      }
+    }
+  }
+
+  if (!found) {
+    sheet.appendRow([month, input.balance]);
+  }
 }
 
 /**

@@ -2,74 +2,82 @@ import type {
   HouseholdData,
   TransactionInput,
   BatchTransactionInput,
+  BalanceInput,
   ApiResponse,
 } from '../types';
 
 const API_BASE = '/api/';
 
-export async function fetchHouseholdData(): Promise<HouseholdData> {
-  const response = await fetch(API_BASE, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit,
+  errorMessage: string,
+  requireData = false
+): Promise<T> {
+  const response = await fetch(endpoint, options);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+    throw new Error(`${errorMessage}: ${response.status} ${response.statusText}`);
   }
 
-  const result: ApiResponse<HouseholdData> = await response.json();
+  const result: ApiResponse<T> = await response.json();
 
   if (!result.success) {
-    throw new Error(result.error || 'Unknown error occurred');
+    throw new Error(result.error || errorMessage);
   }
 
-  if (!result.data) {
+  if (requireData && result.data === undefined) {
     throw new Error('No data returned from API');
   }
 
-  return result.data;
+  return result.data as T;
+}
+
+export async function fetchHouseholdData(): Promise<HouseholdData> {
+  return apiRequest<HouseholdData>(
+    API_BASE,
+    {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    },
+    'Failed to fetch data',
+    true
+  );
 }
 
 export async function addTransaction(input: TransactionInput): Promise<void> {
-  const response = await fetch(API_BASE, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  return apiRequest<void>(
+    API_BASE,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
     },
-    body: JSON.stringify(input),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to add transaction: ${response.status} ${response.statusText}`);
-  }
-
-  const result: ApiResponse<void> = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to add transaction');
-  }
+    'Failed to add transaction'
+  );
 }
 
 export async function addTransactions(inputs: TransactionInput[]): Promise<void> {
   const batchInput: BatchTransactionInput = { transactions: inputs };
-
-  const response = await fetch(API_BASE, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  return apiRequest<void>(
+    API_BASE,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(batchInput),
     },
-    body: JSON.stringify(batchInput),
-  });
+    'Failed to add transactions'
+  );
+}
 
-  if (!response.ok) {
-    throw new Error(`Failed to add transactions: ${response.status} ${response.statusText}`);
-  }
-
-  const result: ApiResponse<void> = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to add transactions');
-  }
+export async function updateBalance(input: BalanceInput): Promise<void> {
+  return apiRequest<void>(
+    API_BASE,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ balance: input }),
+    },
+    'Failed to update balance'
+  );
 }

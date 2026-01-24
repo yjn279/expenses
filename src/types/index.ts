@@ -115,3 +115,13 @@ export interface BatchTransactionInput {
  * グラフの表示モード
  */
 export type ViewMode = 'monthly' | 'yearly';
+
+/**
+ * 残高更新用の入力データ
+ */
+export interface BalanceInput {
+  /** 月（YYYY-MM形式） */
+  month: MonthString;
+  /** 残高（円） */
+  balance: number;
+}
