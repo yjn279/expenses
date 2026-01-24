@@ -84,10 +84,22 @@ async function handlePost(request: Request, env: WorkerEnv): Promise<Response> {
       body: body,
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('Failed to parse GAS response:', text);
+      return Response.json(
+        { success: false, error: 'Invalid JSON from GAS API', raw: text },
+        { status: 500 }
+      );
+    }
+
     return Response.json(data, {
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
       },
     });
   } catch (error) {

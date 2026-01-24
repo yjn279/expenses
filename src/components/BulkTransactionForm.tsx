@@ -20,6 +20,13 @@ const MAX_AMOUNT = 1_000_000_000;
 const MIN_CATEGORY_LENGTH = 1;
 const MAX_CATEGORY_LENGTH = 50;
 
+function isValidMonthString(
+  value: string,
+  validMonths: MonthString[]
+): value is MonthString {
+  return validMonths.includes(value as MonthString);
+}
+
 function validateCategory(category: string): string | null {
   if (category.length < MIN_CATEGORY_LENGTH || category.length > MAX_CATEGORY_LENGTH) {
     return `カテゴリ名「${category}」の長さが無効です（${MIN_CATEGORY_LENGTH}-${MAX_CATEGORY_LENGTH}文字）`;
@@ -33,8 +40,8 @@ export function BulkTransactionForm({
   selectableMonths,
   onSubmit,
 }: BulkTransactionFormProps) {
-  const [month, setMonth] = useState<MonthString>(
-    selectableMonths.length > 0 ? selectableMonths[0] : ('' as MonthString)
+  const [month, setMonth] = useState<MonthString | ''>(
+    selectableMonths.length > 0 ? selectableMonths[0] : ''
   );
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>({});
@@ -70,6 +77,9 @@ export function BulkTransactionForm({
       return;
     }
 
+    // この時点で month は有効な MonthString であることが保証されている
+    const validMonth = month as MonthString;
+
     const transactions: TransactionInput[] = [];
 
     function processCategories(
@@ -95,7 +105,7 @@ export function BulkTransactionForm({
           return false;
         }
 
-        transactions.push({ month, category, type, amount });
+        transactions.push({ month: validMonth, category, type, amount });
       }
       return true;
     }
@@ -138,7 +148,12 @@ export function BulkTransactionForm({
         <select
           id="bulk-month"
           value={month}
-          onChange={(e) => setMonth(e.target.value as MonthString)}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (isValidMonthString(value, selectableMonths)) {
+              setMonth(value);
+            }
+          }}
           required
         >
           {selectableMonths.map((m) => (
