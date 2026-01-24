@@ -1,17 +1,31 @@
 import { useState, useMemo, type FormEvent } from 'react';
-import type { TransactionInput } from '../types';
+import type { TransactionInput, MonthString } from '../types';
 import { CategoryAmountInput } from './CategoryAmountInput';
 
+/**
+ * 一括取引入力フォームのプロパティ
+ */
 interface BulkTransactionFormProps {
+  /** 支出カテゴリの配列 */
   expenseCategories: string[];
+  /** 収入カテゴリの配列 */
   incomeCategories: string[];
-  selectableMonths: string[];
+  /** 選択可能な月の配列 */
+  selectableMonths: MonthString[];
+  /** フォーム送信時のコールバック関数 */
   onSubmit: (inputs: TransactionInput[]) => Promise<void>;
 }
 
-const MAX_AMOUNT = 1_000_000_000; // 10億
+const MAX_AMOUNT = 1_000_000_000;
 const MIN_CATEGORY_LENGTH = 1;
 const MAX_CATEGORY_LENGTH = 50;
+
+function validateCategory(category: string): string | null {
+  if (category.length < MIN_CATEGORY_LENGTH || category.length > MAX_CATEGORY_LENGTH) {
+    return `カテゴリ名「${category}」の長さが無効です（${MIN_CATEGORY_LENGTH}-${MAX_CATEGORY_LENGTH}文字）`;
+  }
+  return null;
+}
 
 export function BulkTransactionForm({
   expenseCategories,
@@ -19,7 +33,9 @@ export function BulkTransactionForm({
   selectableMonths,
   onSubmit,
 }: BulkTransactionFormProps) {
-  const [month, setMonth] = useState<string>(selectableMonths[0] || '');
+  const [month, setMonth] = useState<MonthString>(
+    selectableMonths.length > 0 ? selectableMonths[0] : ('' as MonthString)
+  );
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -34,7 +50,6 @@ export function BulkTransactionForm({
     setIncomeAmounts((prev) => ({ ...prev, [category]: value }));
   };
 
-  // Count how many fields have values
   const filledCount = useMemo(() => {
     const expenseFilled = Object.values(expenseAmounts).filter(
       (v) => v && parseInt(v, 10) > 0
@@ -50,63 +65,47 @@ export function BulkTransactionForm({
     setError(null);
     setSuccess(false);
 
-    // Validation
     if (!month || !selectableMonths.includes(month)) {
       setError('有効な月を選択してください');
       return;
     }
 
-    // Build transactions array
     const transactions: TransactionInput[] = [];
 
-    // Add expense transactions
-    for (const category of expenseCategories) {
-      // Validate category name length
-      if (category.length < MIN_CATEGORY_LENGTH || category.length > MAX_CATEGORY_LENGTH) {
-        setError(
-          `カテゴリ名「${category}」の長さが無効です（${MIN_CATEGORY_LENGTH}-${MAX_CATEGORY_LENGTH}文字）`
-        );
-        return;
-      }
-
-      const amountStr = expenseAmounts[category];
-      if (amountStr) {
-        const amount = parseInt(amountStr, 10);
-        if (amount > 0) {
-          if (amount > MAX_AMOUNT) {
-            setError(
-              `${category}の金額は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`
-            );
-            return;
-          }
-          transactions.push({ month, category, type: 'expense', amount });
+    function processCategories(
+      categories: string[],
+      amounts: Record<string, string>,
+      type: TransactionInput['type']
+    ): boolean {
+      for (const category of categories) {
+        const categoryError = validateCategory(category);
+        if (categoryError) {
+          setError(categoryError);
+          return false;
         }
+
+        const amountStr = amounts[category];
+        if (!amountStr) continue;
+
+        const amount = parseInt(amountStr, 10);
+        if (amount <= 0) continue;
+
+        if (amount > MAX_AMOUNT) {
+          setError(`${category}の金額は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`);
+          return false;
+        }
+
+        transactions.push({ month, category, type, amount });
       }
+      return true;
     }
 
-    // Add income transactions
-    for (const category of incomeCategories) {
-      // Validate category name length
-      if (category.length < MIN_CATEGORY_LENGTH || category.length > MAX_CATEGORY_LENGTH) {
-        setError(
-          `カテゴリ名「${category}」の長さが無効です（${MIN_CATEGORY_LENGTH}-${MAX_CATEGORY_LENGTH}文字）`
-        );
-        return;
-      }
+    if (!processCategories(expenseCategories, expenseAmounts, 'expense')) {
+      return;
+    }
 
-      const amountStr = incomeAmounts[category];
-      if (amountStr) {
-        const amount = parseInt(amountStr, 10);
-        if (amount > 0) {
-          if (amount > MAX_AMOUNT) {
-            setError(
-              `${category}の金額は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`
-            );
-            return;
-          }
-          transactions.push({ month, category, type: 'income', amount });
-        }
-      }
+    if (!processCategories(incomeCategories, incomeAmounts, 'income')) {
+      return;
     }
 
     if (transactions.length === 0) {
@@ -118,13 +117,10 @@ export function BulkTransactionForm({
     try {
       await onSubmit(transactions);
       setSuccess(true);
-      // Clear all amounts
       setExpenseAmounts({});
       setIncomeAmounts({});
-      // Focus management: after successful submission, focus stays on submit button
     } catch (e) {
       setError(e instanceof Error ? e.message : 'エラーが発生しました');
-      // Focus management: on error, focus should remain on form for keyboard navigation
     } finally {
       setSubmitting(false);
     }
@@ -142,7 +138,7 @@ export function BulkTransactionForm({
         <select
           id="bulk-month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(e) => setMonth(e.target.value as MonthString)}
           required
         >
           {selectableMonths.map((m) => (
@@ -212,8 +208,8 @@ export function BulkTransactionForm({
         {submitting
           ? '追加中...'
           : filledCount > 0
-            ? `まとめて追加（${filledCount}件）`
-            : 'まとめて追加'}
+          ? `まとめて追加（${filledCount}件）`
+          : 'まとめて追加'}
       </button>
     </form>
   );

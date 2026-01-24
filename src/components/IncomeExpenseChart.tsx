@@ -11,49 +11,40 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { MonthlyData, YearlyData } from '../types';
+import { isMonthlyData, isYearlyData, isNumber, isString } from '../utils/typeGuards';
+import { formatCurrency, formatAxisLabel } from '../utils/format';
 
+/**
+ * 収支推移グラフのプロパティ
+ */
 interface IncomeExpenseChartProps {
+  /** 表示するデータ（月次または年次） */
   data: MonthlyData[] | YearlyData[];
+  /** 月次データかどうか */
   isMonthly: boolean;
 }
 
-// Type guard functions
-function isMonthlyData(item: MonthlyData | YearlyData): item is MonthlyData {
-  return 'month' in item;
-}
-
-function isYearlyData(item: MonthlyData | YearlyData): item is YearlyData {
-  return 'year' in item;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatAxisLabel(value: number): string {
-  const absValue = Math.abs(value);
-  if (absValue >= 100000000) {
-    return `${(value / 100000000).toFixed(1)}億`;
-  }
-  if (absValue >= 10000) {
-    return `${(value / 10000).toFixed(0)}万`;
-  }
-  return value.toString();
-}
+const LABELS: Record<string, string> = {
+  income: '収入',
+  expense: '支出',
+  profit: '収支',
+};
 
 export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps) {
-  const chartData = data.map((item) => ({
-    period: isMonthly
-      ? (isMonthlyData(item) ? item.month : '')
-      : (isYearlyData(item) ? item.year : ''),
-    income: item.income,
-    expense: -item.expense, // Show as negative for visual clarity
-    profit: item.profit,
-  }));
+  const chartData = data.map((item) => {
+    const period = isMonthly && isMonthlyData(item)
+      ? item.month
+      : isYearlyData(item)
+      ? item.year
+      : '';
+
+    return {
+      period,
+      income: item.income,
+      expense: -item.expense,
+      profit: item.profit,
+    };
+  });
 
   return (
     <div className="chart-container">
@@ -73,15 +64,11 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
           />
           <Tooltip
             formatter={(value, name) => {
-              const numValue = value as number;
-              const strName = name as string;
-              const displayValue = strName === 'expense' ? -numValue : numValue;
-              const labels: Record<string, string> = {
-                income: '収入',
-                expense: '支出',
-                profit: '収支',
-              };
-              return [formatCurrency(displayValue), labels[strName] || strName];
+              if (!isNumber(value) || !isString(name)) {
+                return ['', ''];
+              }
+              const displayValue = name === 'expense' ? -value : value;
+              return [formatCurrency(displayValue), LABELS[name] || name];
             }}
             labelStyle={{ color: '#333' }}
             contentStyle={{
@@ -90,16 +77,7 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
               borderRadius: '4px',
             }}
           />
-          <Legend
-            formatter={(value: string) => {
-              const labels: Record<string, string> = {
-                income: '収入',
-                expense: '支出',
-                profit: '収支',
-              };
-              return labels[value] || value;
-            }}
-          />
+          <Legend formatter={(value: string) => LABELS[value] || value} />
           <ReferenceLine y={0} stroke="#999" />
           <Bar
             dataKey="income"

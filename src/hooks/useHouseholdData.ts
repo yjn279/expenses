@@ -2,10 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import type { HouseholdData } from '../types';
 import { fetchHouseholdData } from '../api/household';
 
+/**
+ * useHouseholdDataフックの戻り値の型
+ */
 interface UseHouseholdDataResult {
+  /** 家計データ（読み込み中またはエラー時はnull） */
   data: HouseholdData | null;
+  /** データ読み込み中かどうか */
   loading: boolean;
+  /** エラーオブジェクト（エラーがない場合はnull） */
   error: Error | null;
+  /** データを再取得する関数 */
   refetch: () => void;
 }
 

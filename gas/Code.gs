@@ -9,7 +9,7 @@
  * - B/S シート: 初期残高 (initialBalance) と開始月 (startMonth)
  */
 
-// スプレッドシートID（環境に応じて変更）
+// スプレッドシートID（PropertiesServiceから取得、未設定の場合は空文字列）
 const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '';
 
 // シート名
@@ -51,6 +51,8 @@ function doPost(e) {
 
 /**
  * JSONレスポンスを作成
+ * @param data - レスポンスデータ
+ * @param statusCode - 未使用（Google Apps ScriptのContentServiceはHTTPステータスコードを設定できないため）
  */
 function createJsonResponse(data, statusCode) {
   const output = ContentService.createTextOutput(JSON.stringify(data));
@@ -73,19 +75,10 @@ function getHouseholdData() {
     throw new Error('Failed to open spreadsheet: ' + error.message);
   }
 
-  // 設定情報を取得
   const settings = getSettings(ss);
-
-  // P/Lデータを取得
   const transactions = getTransactions(ss);
-
-  // カテゴリ一覧を抽出（支出・収入別）
   const categoryData = extractCategoriesByType(transactions);
-
-  // 月次データを集計
   const monthlyData = aggregateMonthlyData(transactions, settings);
-
-  // 年次データを集計
   const yearlyData = aggregateYearlyData(monthlyData);
 
   return {
@@ -141,7 +134,6 @@ function getTransactions(ss) {
 
   const transactions = [];
 
-  // ヘッダー行: month, category, type, amount
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue; // 空行をスキップ
@@ -207,7 +199,6 @@ function extractCategoriesByType(transactions) {
  * 月次データを集計
  */
 function aggregateMonthlyData(transactions, settings) {
-  // 月ごとにグループ化
   const monthlyMap = {};
 
   transactions.forEach(function(t) {
@@ -236,10 +227,7 @@ function aggregateMonthlyData(transactions, settings) {
     }
   });
 
-  // 月順にソート
   const sortedMonths = Object.keys(monthlyMap).sort();
-
-  // 収支と累積資産を計算
   let runningTotal = settings.initialBalance;
 
   const result = sortedMonths.map(function(month) {
@@ -282,9 +270,8 @@ function aggregateYearlyData(monthlyData) {
     const yearData = yearlyMap[year];
     yearData.income += m.income;
     yearData.expense += m.expense;
-    yearData.lastTotalAssets = m.totalAssets; // 年末の資産
+    yearData.lastTotalAssets = m.totalAssets; // その年の最後の月の総資産（年次データのtotalAssetsとして使用）
 
-    // カテゴリ別支出を合算
     Object.keys(m.categoryExpense).forEach(function(cat) {
       if (!yearData.categoryExpense[cat]) {
         yearData.categoryExpense[cat] = 0;
@@ -293,7 +280,6 @@ function aggregateYearlyData(monthlyData) {
     });
   });
 
-  // 年順にソート
   const sortedYears = Object.keys(yearlyMap).sort();
 
   return sortedYears.map(function(year) {
@@ -344,12 +330,10 @@ function validateTransaction(input) {
 function addTransaction(input) {
   validateTransaction(input);
 
-  // P/Lシートに追加
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(PL_SHEET_NAME);
 
   if (!sheet) {
-    // シートが存在しない場合は作成
     sheet = ss.insertSheet(PL_SHEET_NAME);
     sheet.appendRow(['month', 'category', 'type', 'amount']);
   }
@@ -365,7 +349,6 @@ function addTransactions(inputs) {
     throw new Error('Transactions array is required');
   }
 
-  // 全トランザクションをバリデーション
   inputs.forEach(function(input, index) {
     try {
       validateTransaction(input);
@@ -374,7 +357,6 @@ function addTransactions(inputs) {
     }
   });
 
-  // P/Lシートに追加
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(PL_SHEET_NAME);
 
@@ -383,7 +365,6 @@ function addTransactions(inputs) {
     sheet.appendRow(['month', 'category', 'type', 'amount']);
   }
 
-  // バッチで行を追加
   const rows = inputs.map(function(input) {
     return [input.month, input.category, input.type, input.amount];
   });

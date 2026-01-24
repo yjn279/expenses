@@ -7,60 +7,50 @@ import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
 import { BulkTransactionForm } from './components/BulkTransactionForm';
 import { normalizeMonth } from './utils/month';
-import type { ViewMode, TransactionInput, MonthlyData } from './types';
+import type { ViewMode, TransactionInput, MonthString } from './types';
 
 function App() {
   const { data, loading, error, refetch } = useHouseholdData();
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [showForm, setShowForm] = useState(false);
 
-  // Get last 12 months for monthly view
   const displayData = useMemo(() => {
     if (!data) return { chartData: [], categories: [] };
 
     if (viewMode === 'monthly') {
-      const monthlyData = data.monthlyData.slice(-12);
       return {
-        chartData: monthlyData,
-        categories: data.categories,
-      };
-    } else {
-      return {
-        chartData: data.yearlyData,
+        chartData: data.monthlyData.slice(-12),
         categories: data.categories,
       };
     }
+
+    return {
+      chartData: data.yearlyData,
+      categories: data.categories,
+    };
   }, [data, viewMode]);
 
-  // Calculate selectable months (months not in monthlyData, from startMonth to two months ago)
+  // Calculate selectable months: months from startMonth to (current date - 2 months)
+  // that are not already present in monthlyData
   const selectableMonths = useMemo(() => {
     if (!data) return [];
-
-    // Normalize all months in monthlyData
     const existingMonths = new Set(
       data.monthlyData
         .map((d) => normalizeMonth(d.month))
-        .filter((m): m is string => m !== null)
+        .filter((m): m is MonthString => m !== null)
     );
     
-    // Normalize startMonth to YYYY-MM format
-    let startMonth: string | null = normalizeMonth(data.settings.startMonth);
-    
-    // Fallback to earliest month in data if startMonth is still invalid
+    let startMonth = normalizeMonth(data.settings.startMonth);
     if (!startMonth && data.monthlyData.length > 0) {
       startMonth = normalizeMonth(data.monthlyData[0].month);
     }
-    
-    if (!startMonth || !/^\d{4}-\d{2}$/.test(startMonth)) {
+    if (!startMonth) {
       return [];
     }
 
-    // Calculate two months ago
     const now = new Date();
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-
-    // Generate all months from startMonth to twoMonthsAgo
-    const months: string[] = [];
+    const months: MonthString[] = [];
     const [startYear, startMonthNum] = startMonth.split('-').map(Number);
     let currentYear = startYear;
     let currentMonth = startMonthNum;
@@ -69,7 +59,7 @@ function App() {
     const endMonth = twoMonthsAgo.getMonth() + 1;
 
     while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
-      const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+      const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}` as MonthString;
       if (!existingMonths.has(monthStr)) {
         months.push(monthStr);
       }
@@ -199,7 +189,7 @@ function App() {
           />
 
           <CategoryExpenseChart
-            data={displayData.chartData as MonthlyData[]}
+            data={displayData.chartData}
             categories={displayData.categories}
             isMonthly={viewMode === 'monthly'}
           />

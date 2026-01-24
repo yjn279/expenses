@@ -8,46 +8,29 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { MonthlyData, YearlyData } from '../types';
+import { isMonthlyData, isYearlyData, isNumber } from '../utils/typeGuards';
+import { formatCurrency, formatAxisLabel } from '../utils/format';
 
+/**
+ * 総資産推移グラフのプロパティ
+ */
 interface TotalAssetsChartProps {
+  /** 表示するデータ（月次または年次） */
   data: MonthlyData[] | YearlyData[];
+  /** 月次データかどうか */
   isMonthly: boolean;
 }
 
-// Type guard functions
-function isMonthlyData(item: MonthlyData | YearlyData): item is MonthlyData {
-  return 'month' in item;
-}
-
-function isYearlyData(item: MonthlyData | YearlyData): item is YearlyData {
-  return 'year' in item;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatAxisLabel(value: number): string {
-  if (value >= 100000000) {
-    return `${(value / 100000000).toFixed(1)}億`;
-  }
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(0)}万`;
-  }
-  return value.toString();
-}
-
 export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
-  const chartData = data.map((item) => ({
-    period: isMonthly
-      ? (isMonthlyData(item) ? item.month : '')
-      : (isYearlyData(item) ? item.year : ''),
-    totalAssets: item.totalAssets,
-  }));
+  const chartData = data.map((item) => {
+    const period = isMonthly && isMonthlyData(item)
+      ? item.month
+      : isYearlyData(item)
+      ? item.year
+      : '';
+
+    return { period, totalAssets: item.totalAssets };
+  });
 
   return (
     <div className="chart-container">
@@ -72,7 +55,12 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
             tickFormatter={formatAxisLabel}
           />
           <Tooltip
-            formatter={(value) => [formatCurrency(value as number), '総資産']}
+            formatter={(value) => {
+              if (!isNumber(value)) {
+                return ['', ''];
+              }
+              return [formatCurrency(value), '総資産'];
+            }}
             labelStyle={{ color: '#333' }}
             contentStyle={{
               backgroundColor: '#fff',

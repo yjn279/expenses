@@ -1,8 +1,14 @@
 import type { ChangeEvent } from 'react';
 
+/**
+ * カテゴリ別金額入力コンポーネントのプロパティ
+ */
 interface CategoryAmountInputProps {
+  /** カテゴリ名 */
   category: string;
+  /** 入力値（文字列） */
   value: string;
+  /** 値が変更されたときに呼ばれるコールバック関数 */
   onChange: (category: string, value: string) => void;
 }
 
@@ -13,7 +19,6 @@ export function CategoryAmountInput({
 }: CategoryAmountInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    // Only allow digits
     if (newValue === '' || /^\d+$/.test(newValue)) {
       onChange(category, newValue);
     }
