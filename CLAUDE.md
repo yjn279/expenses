@@ -60,10 +60,10 @@ pnpm cf-typegen
 
 ## Data Flow
 
-1. **transactions シート**: 月・カテゴリ・金額を記録（手入力またはPOST API経由）
-2. **settings シート**: 初期残高（手入力）と開始月（関数で自動取得）を管理
+1. **P/L シート**: 月次の収入・支出を記録（手入力またはPOST API経由）
+2. **B/S シート**: 初期残高（手入力）と開始月（関数で自動取得）を管理
 3. **Google Apps Script**: スプレッドシートデータを集計してJSON APIとして公開
-4. **Worker**: GAS APIへのプロキシ、将来的にはキャッシュ層としても機能
+4. **Worker**: GAS APIへのプロキシ（Basic認証付き）、将来的にはキャッシュ層としても機能
 5. **Frontend**: データを取得してグラフ表示、フォームから新規データ追加
 
 ## API Design
