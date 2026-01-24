@@ -16,13 +16,26 @@
 		"test:coverage": "vitest --coverage"
 	},
 	"dependencies": {
+		"@radix-ui/react-dialog": "^1.1.15",
+		"@radix-ui/react-label": "^2.1.8",
+		"@radix-ui/react-select": "^2.2.6",
+		"@radix-ui/react-separator": "^1.1.8",
+		"@radix-ui/react-slot": "^1.2.4",
+		"@radix-ui/react-tabs": "^1.1.13",
+		"@tailwindcss/vite": "^4.1.18",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"lucide-react": "^0.563.0",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
-		"recharts": "^3.7.0"
+		"recharts": "^3.7.0",
+		"tailwind-merge": "^3.4.0",
+		"tailwindcss": "^4.1.18"
 	},
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "^1.21.2",
 		"@eslint/js": "^9.33.0",
+		"@types/node": "^25.0.10",
 		"@types/react": "^19.1.10",
 		"@types/react-dom": "^19.1.7",
 		"@vitejs/plugin-react-swc": "^4.0.0",

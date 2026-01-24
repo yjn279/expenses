@@ -1,16 +1,11 @@
 import type { ChangeEvent } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-/**
- * カテゴリ別金額入力コンポーネントのプロパティ
- */
 interface CategoryAmountInputProps {
-  /** カテゴリ名 */
   category: string;
-  /** 入力値（文字列） */
   value: string;
-  /** 値が変更されたときに呼ばれるコールバック関数 */
   onChange: (category: string, value: string) => void;
-  /** 必須項目かどうか */
   required?: boolean;
 }
 
@@ -27,21 +22,31 @@ export function CategoryAmountInput({
     }
   };
 
+  const inputId = `category-${category.replace(/\s+/g, '-')}`;
+
   return (
-    <div className="category-amount-row">
-      <label className="category-label">{category}</label>
-      <div className="amount-input-wrapper">
-        <input
+    <div className="flex items-center gap-3">
+      <Label
+        htmlFor={inputId}
+        className="min-w-[100px] flex-shrink-0 text-sm font-normal text-foreground"
+      >
+        {category}
+      </Label>
+      <div className="relative flex-1">
+        <Input
+          id={inputId}
           type="text"
           inputMode="numeric"
           pattern="\d*"
           placeholder="0"
           value={value}
           onChange={handleChange}
-          className="amount-field"
+          className="pr-8 text-right"
           required={required}
         />
-        <span className="currency">円</span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+          円
+        </span>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import './App.css';
 import { useHouseholdData } from './hooks/useHouseholdData';
 import { addTransactions, updateBalance } from './api/household';
 import { TotalAssetsChart } from './components/TotalAssetsChart';
@@ -8,6 +7,13 @@ import { CategoryExpenseChart } from './components/CategoryExpenseChart';
 import { BulkTransactionForm } from './components/BulkTransactionForm';
 import { normalizeMonth } from './utils/month';
 import type { ViewMode, TransactionInput, MonthString } from './types';
+
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PlusCircle, RefreshCw, AlertCircle, Wallet } from 'lucide-react';
 
 function App() {
   const { data, loading, error, refetch } = useHouseholdData();
@@ -38,7 +44,7 @@ function App() {
         .map((d) => normalizeMonth(d.month))
         .filter((m): m is MonthString => m !== null)
     );
-    
+
     let startMonth = normalizeMonth(data.settings.startMonth);
     if (!startMonth && data.monthlyData.length > 0) {
       startMonth = normalizeMonth(data.monthlyData[0].month);
@@ -74,116 +80,187 @@ function App() {
     refetch();
   };
 
-  function renderErrorState(title: string, message: string | null = null) {
+  // Loading state
+  if (loading) {
     return (
-      <div className="app">
-        <header className="app-header">
-          <h1>家計簿ダッシュボード</h1>
+      <div className="min-h-screen bg-background">
+        <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+          <div className="mx-auto flex max-w-6xl items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <Wallet className="size-5 text-primary" />
+              </div>
+              <h1 className="text-xl font-semibold text-foreground">家計簿ダッシュボード</h1>
+            </div>
+          </div>
         </header>
-        <main className="app-main">
-          <div className="error">
-            <p>{title}</p>
-            {message && <p className="error-message">{message}</p>}
-            <button onClick={refetch} className="btn-retry">
-              再読み込み
-            </button>
+        <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-10 w-48 mx-auto" />
+            <Skeleton className="h-[300px] w-full rounded-xl" />
+            <Skeleton className="h-[300px] w-full rounded-xl" />
+            <Skeleton className="h-[350px] w-full rounded-xl" />
           </div>
         </main>
       </div>
     );
   }
 
-  if (loading) {
+  // Error state
+  if (error) {
     return (
-      <div className="app">
-        <header className="app-header">
-          <h1>家計簿ダッシュボード</h1>
+      <div className="min-h-screen bg-background">
+        <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+          <div className="mx-auto flex max-w-6xl items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <Wallet className="size-5 text-primary" />
+              </div>
+              <h1 className="text-xl font-semibold text-foreground">家計簿ダッシュボード</h1>
+            </div>
+          </div>
         </header>
-        <main className="app-main">
-          <div className="loading">データを読み込み中...</div>
+        <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+          <Alert variant="destructive" className="glass-card">
+            <AlertCircle className="size-4" />
+            <AlertDescription className="flex flex-col gap-4">
+              <span>エラーが発生しました: {error.message}</span>
+              <Button onClick={refetch} variant="outline" size="sm" className="w-fit">
+                <RefreshCw className="size-4" />
+                再読み込み
+              </Button>
+            </AlertDescription>
+          </Alert>
         </main>
       </div>
     );
   }
 
-  if (error) {
-    return renderErrorState('エラーが発生しました', error.message);
-  }
-
+  // No data state
   if (!data) {
-    return renderErrorState('データがありません');
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+          <div className="mx-auto flex max-w-6xl items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <Wallet className="size-5 text-primary" />
+              </div>
+              <h1 className="text-xl font-semibold text-foreground">家計簿ダッシュボード</h1>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+          <Alert className="glass-card">
+            <AlertCircle className="size-4" />
+            <AlertDescription className="flex flex-col gap-4">
+              <span>データがありません</span>
+              <Button onClick={refetch} variant="outline" size="sm" className="w-fit">
+                <RefreshCw className="size-4" />
+                再読み込み
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </main>
+      </div>
+    );
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>家計簿ダッシュボード</h1>
-        {selectableMonths.length > 0 && (
-          <div className="header-actions">
-            <button onClick={() => setShowForm(true)} className="btn-input">
-              入力
-            </button>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <Wallet className="size-5 text-primary" />
+            </div>
+            <h1 className="text-xl font-semibold text-foreground">家計簿ダッシュボード</h1>
           </div>
-        )}
+          {selectableMonths.length > 0 && (
+            <Button onClick={() => setShowForm(true)} size="sm">
+              <PlusCircle className="size-4" />
+              入力
+            </Button>
+          )}
+        </div>
       </header>
 
-      {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowForm(false)}>
-              ×
-            </button>
-            <BulkTransactionForm
-              expenseCategories={data.expenseCategories || data.categories}
-              incomeCategories={data.incomeCategories || []}
-              selectableMonths={selectableMonths}
-              onSubmit={async (inputs, balanceInput) => {
-                if (inputs.length > 0) {
-                  await handleAddTransactions(inputs);
-                }
-                await updateBalance(balanceInput);
-                refetch();
-                setShowForm(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      <main className="app-main">
-
-        <section className="view-toggle">
-          <button
-            className={`toggle-btn ${viewMode === 'monthly' ? 'active' : ''}`}
-            onClick={() => setViewMode('monthly')}
-          >
-            月別
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === 'yearly' ? 'active' : ''}`}
-            onClick={() => setViewMode('yearly')}
-          >
-            年別
-          </button>
-        </section>
-
-        <section className="charts-section">
-          <TotalAssetsChart
-            data={displayData.chartData}
-            isMonthly={viewMode === 'monthly'}
+      {/* Transaction Form Dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>取引を追加</DialogTitle>
+          </DialogHeader>
+          <BulkTransactionForm
+            expenseCategories={data.expenseCategories || data.categories}
+            incomeCategories={data.incomeCategories || []}
+            selectableMonths={selectableMonths}
+            onSubmit={async (inputs, balanceInput) => {
+              if (inputs.length > 0) {
+                await handleAddTransactions(inputs);
+              }
+              await updateBalance(balanceInput);
+              refetch();
+              setShowForm(false);
+            }}
           />
+        </DialogContent>
+      </Dialog>
 
-          <IncomeExpenseChart
-            data={displayData.chartData}
-            isMonthly={viewMode === 'monthly'}
-          />
+      {/* Main Content */}
+      <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+        {/* View Toggle Tabs */}
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as ViewMode)}
+          className="mb-8"
+        >
+          <TabsList className="mx-auto">
+            <TabsTrigger value="monthly" className="px-6">
+              月別
+            </TabsTrigger>
+            <TabsTrigger value="yearly" className="px-6">
+              年別
+            </TabsTrigger>
+          </TabsList>
 
-          <CategoryExpenseChart
-            data={displayData.chartData}
-            categories={displayData.categories}
-            isMonthly={viewMode === 'monthly'}
-          />
-        </section>
+          <TabsContent value="monthly" className="mt-6">
+            <div className="flex flex-col gap-6">
+              <TotalAssetsChart
+                data={displayData.chartData}
+                isMonthly={true}
+              />
+              <IncomeExpenseChart
+                data={displayData.chartData}
+                isMonthly={true}
+              />
+              <CategoryExpenseChart
+                data={displayData.chartData}
+                categories={displayData.categories}
+                isMonthly={true}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="yearly" className="mt-6">
+            <div className="flex flex-col gap-6">
+              <TotalAssetsChart
+                data={displayData.chartData}
+                isMonthly={false}
+              />
+              <IncomeExpenseChart
+                data={displayData.chartData}
+                isMonthly={false}
+              />
+              <CategoryExpenseChart
+                data={displayData.chartData}
+                categories={displayData.categories}
+                isMonthly={false}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
