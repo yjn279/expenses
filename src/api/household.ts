@@ -2,6 +2,7 @@ import type {
   HouseholdData,
   TransactionInput,
   BatchTransactionInput,
+  BalanceInput,
   ApiResponse,
 } from '../types';
 
@@ -71,5 +72,25 @@ export async function addTransactions(inputs: TransactionInput[]): Promise<void>
 
   if (!result.success) {
     throw new Error(result.error || 'Failed to add transactions');
+  }
+}
+
+export async function updateBalance(input: BalanceInput): Promise<void> {
+  const response = await fetch(API_BASE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ balance: input }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update balance: ${response.status} ${response.statusText}`);
+  }
+
+  const result: ApiResponse<void> = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to update balance');
   }
 }

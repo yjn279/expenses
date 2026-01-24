@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import './App.css';
 import { useHouseholdData } from './hooks/useHouseholdData';
-import { addTransactions } from './api/household';
+import { addTransactions, updateBalance } from './api/household';
 import { TotalAssetsChart } from './components/TotalAssetsChart';
 import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
 import { BulkTransactionForm } from './components/BulkTransactionForm';
 import { normalizeMonth } from './utils/month';
-import type { ViewMode, TransactionInput, MonthString } from './types';
+import type { ViewMode, TransactionInput, MonthString, BalanceInput } from './types';
 
 function App() {
   const { data, loading, error, refetch } = useHouseholdData();
@@ -151,8 +151,12 @@ function App() {
               expenseCategories={data.expenseCategories || data.categories}
               incomeCategories={data.incomeCategories || []}
               selectableMonths={selectableMonths}
-              onSubmit={async (inputs) => {
-                await handleAddTransactions(inputs);
+              onSubmit={async (inputs, balanceInput) => {
+                if (inputs.length > 0) {
+                  await handleAddTransactions(inputs);
+                }
+                await updateBalance(balanceInput);
+                refetch();
                 setShowForm(false);
               }}
             />
@@ -194,27 +198,7 @@ function App() {
             isMonthly={viewMode === 'monthly'}
           />
         </section>
-
-        <section className="summary-section">
-          <h3>設定情報</h3>
-          <dl className="settings-list">
-            <dt>開始月</dt>
-            <dd>{data.settings.startMonth}</dd>
-            <dt>初期残高</dt>
-            <dd>
-              {new Intl.NumberFormat('ja-JP', {
-                style: 'currency',
-                currency: 'JPY',
-                maximumFractionDigits: 0,
-              }).format(data.settings.initialBalance)}
-            </dd>
-          </dl>
-        </section>
       </main>
-
-      <footer className="app-footer">
-        <p>家計簿ダッシュボード</p>
-      </footer>
     </div>
   );
 }

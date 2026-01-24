@@ -10,12 +10,15 @@ interface CategoryAmountInputProps {
   value: string;
   /** 値が変更されたときに呼ばれるコールバック関数 */
   onChange: (category: string, value: string) => void;
+  /** 必須項目かどうか */
+  required?: boolean;
 }
 
 export function CategoryAmountInput({
   category,
   value,
   onChange,
+  required = false,
 }: CategoryAmountInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -36,6 +39,7 @@ export function CategoryAmountInput({
           value={value}
           onChange={handleChange}
           className="amount-field"
+          required={required}
         />
         <span className="currency">円</span>
       </div>
