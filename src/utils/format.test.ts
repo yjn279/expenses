@@ -40,9 +40,15 @@ describe('formatAxisLabel', () => {
     expect(formatAxisLabel(1000)).toBe('1000');
   });
 
-  it('should handle negative values correctly', () => {
+  it('should handle negative 億 values', () => {
     expect(formatAxisLabel(-100000000)).toBe('-1.0億');
+  });
+
+  it('should handle negative 万 values', () => {
     expect(formatAxisLabel(-10000)).toBe('-1万');
+  });
+
+  it('should handle negative values without unit', () => {
     expect(formatAxisLabel(-1000)).toBe('-1000');
   });
 });

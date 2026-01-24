@@ -11,6 +11,9 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
+const OKU = 100000000;
+const MAN = 10000;
+
 /**
  * 数値をグラフの軸ラベル用にフォーマット（億、万単位に変換）
  * @param value - フォーマットする数値（負の値もサポート）
@@ -18,11 +21,14 @@ export function formatCurrency(value: number): string {
  */
 export function formatAxisLabel(value: number): string {
   const absValue = Math.abs(value);
-  if (absValue >= 100000000) {
-    return `${(value / 100000000).toFixed(1)}億`;
+  
+  if (absValue >= OKU) {
+    return `${(value / OKU).toFixed(1)}億`;
   }
-  if (absValue >= 10000) {
-    return `${(value / 10000).toFixed(0)}万`;
+  
+  if (absValue >= MAN) {
+    return `${(value / MAN).toFixed(0)}万`;
   }
+  
   return value.toString();
 }

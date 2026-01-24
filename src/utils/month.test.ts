@@ -22,8 +22,11 @@ describe('normalizeMonth', () => {
     expect(normalizeMonth('2025-09-01T00:00:00.000Z')).toBe('2025-09');
   });
 
-  it('should handle different months correctly', () => {
+  it('should handle December correctly', () => {
     expect(normalizeMonth('2025-12')).toBe('2025-12');
+  });
+
+  it('should handle January correctly', () => {
     expect(normalizeMonth('2025-01')).toBe('2025-01');
   });
 });

@@ -14,18 +14,22 @@ import type { MonthString } from '../types';
  * normalizeMonth("Mon Sep 01 2025 00:00:00 GMT+0900") // "2025-09"
  * normalizeMonth("invalid") // null
  */
+const YYYY_MM_PATTERN = /^\d{4}-\d{2}$/;
+
 export function normalizeMonth(monthStr: string): MonthString | null {
-  if (!monthStr || typeof monthStr !== 'string') return null;
+  if (!monthStr || typeof monthStr !== 'string') {
+    return null;
+  }
   
-  // Already in YYYY-MM format
-  if (/^\d{4}-\d{2}$/.test(monthStr)) {
+  if (YYYY_MM_PATTERN.test(monthStr)) {
     return monthStr as MonthString;
   }
   
-  // Try to parse as date (handles Date strings like 'Mon Sep 01 2025...' or ISO format)
   const date = new Date(monthStr);
   if (!isNaN(date.getTime())) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` as MonthString;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}` as MonthString;
   }
   
   return null;
