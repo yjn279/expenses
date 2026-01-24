@@ -34,7 +34,9 @@ export interface HouseholdData {
   settings: Settings;
   monthlyData: MonthlyData[];
   yearlyData: YearlyData[];
-  categories: string[];
+  categories: string[]; // 後方互換（= expenseCategories）
+  expenseCategories: string[];
+  incomeCategories: string[];
 }
 
 // Generic API response wrapper
@@ -50,6 +52,11 @@ export interface TransactionInput {
   category: string;
   type: 'income' | 'expense';
   amount: number;
+}
+
+// Input for batch transaction submission
+export interface BatchTransactionInput {
+  transactions: TransactionInput[];
 }
 
 // View mode for charts

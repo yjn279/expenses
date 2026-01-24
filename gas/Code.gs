@@ -29,12 +29,20 @@ function doGet(e) {
 }
 
 /**
- * POST リクエストハンドラ - レコード追加
+ * POST リクエストハンドラ - レコード追加（単一/バッチ対応）
  */
 function doPost(e) {
   try {
     const input = JSON.parse(e.postData.contents);
-    addTransaction(input);
+
+    // バッチ入力対応: { transactions: [...] } 形式
+    if (input.transactions && Array.isArray(input.transactions)) {
+      addTransactions(input.transactions);
+    } else {
+      // 単一入力（後方互換）
+      addTransaction(input);
+    }
+
     return createJsonResponse({ success: true });
   } catch (error) {
     return createJsonResponse({ success: false, error: error.message }, 400);
@@ -62,8 +70,8 @@ function getHouseholdData() {
   // P/Lデータを取得
   const transactions = getTransactions(ss);
 
-  // カテゴリ一覧を抽出
-  const categories = extractCategories(transactions);
+  // カテゴリ一覧を抽出（支出・収入別）
+  const categoryData = extractCategoriesByType(transactions);
 
   // 月次データを集計
   const monthlyData = aggregateMonthlyData(transactions, settings);
@@ -75,7 +83,9 @@ function getHouseholdData() {
     settings: settings,
     monthlyData: monthlyData,
     yearlyData: yearlyData,
-    categories: categories
+    categories: categoryData.expenseCategories, // 後方互換
+    expenseCategories: categoryData.expenseCategories,
+    incomeCategories: categoryData.incomeCategories
   };
 }
 
@@ -159,7 +169,7 @@ function formatMonth(value) {
 }
 
 /**
- * カテゴリ一覧を抽出（重複排除）
+ * カテゴリ一覧を抽出（重複排除）- 後方互換用
  */
 function extractCategories(transactions) {
   const categorySet = {};
@@ -169,6 +179,29 @@ function extractCategories(transactions) {
     }
   });
   return Object.keys(categorySet).sort();
+}
+
+/**
+ * カテゴリ一覧を支出・収入別に抽出
+ */
+function extractCategoriesByType(transactions) {
+  const expenseSet = {};
+  const incomeSet = {};
+
+  transactions.forEach(function(t) {
+    if (!t.category) return;
+
+    if (t.type === 'expense') {
+      expenseSet[t.category] = true;
+    } else if (t.type === 'income') {
+      incomeSet[t.category] = true;
+    }
+  });
+
+  return {
+    expenseCategories: Object.keys(expenseSet).sort(),
+    incomeCategories: Object.keys(incomeSet).sort()
+  };
 }
 
 /**
@@ -278,10 +311,9 @@ function aggregateYearlyData(monthlyData) {
 }
 
 /**
- * トランザクションを追加
+ * 単一トランザクションのバリデーション
  */
-function addTransaction(input) {
-  // バリデーション
+function validateTransaction(input) {
   if (!input.month || !/^\d{4}-\d{2}$/.test(input.month)) {
     throw new Error('Invalid month format. Expected YYYY-MM');
   }
@@ -301,6 +333,13 @@ function addTransaction(input) {
   if (input.amount > 1000000000) {
     throw new Error('Amount exceeds maximum allowed value');
   }
+}
+
+/**
+ * トランザクションを追加（単一）
+ */
+function addTransaction(input) {
+  validateTransaction(input);
 
   // P/Lシートに追加
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -313,6 +352,41 @@ function addTransaction(input) {
   }
 
   sheet.appendRow([input.month, input.category, input.type, input.amount]);
+}
+
+/**
+ * トランザクションを追加（バッチ）
+ */
+function addTransactions(inputs) {
+  if (!Array.isArray(inputs) || inputs.length === 0) {
+    throw new Error('Transactions array is required');
+  }
+
+  // 全トランザクションをバリデーション
+  inputs.forEach(function(input, index) {
+    try {
+      validateTransaction(input);
+    } catch (e) {
+      throw new Error('Transaction ' + index + ': ' + e.message);
+    }
+  });
+
+  // P/Lシートに追加
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(PL_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(PL_SHEET_NAME);
+    sheet.appendRow(['month', 'category', 'type', 'amount']);
+  }
+
+  // バッチで行を追加
+  const rows = inputs.map(function(input) {
+    return [input.month, input.category, input.type, input.amount];
+  });
+
+  const lastRow = sheet.getLastRow();
+  sheet.getRange(lastRow + 1, 1, rows.length, 4).setValues(rows);
 }
 
 /**

@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import './App.css';
 import { useHouseholdData } from './hooks/useHouseholdData';
-import { addTransaction } from './api/household';
+import { addTransactions } from './api/household';
 import { TotalAssetsChart } from './components/TotalAssetsChart';
 import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
-import { TransactionForm } from './components/TransactionForm';
+import { BulkTransactionForm } from './components/BulkTransactionForm';
 import type { ViewMode, TransactionInput, MonthlyData } from './types';
 
 function App() {
@@ -30,8 +30,8 @@ function App() {
     }
   }, [data, viewMode]);
 
-  const handleAddTransaction = async (input: TransactionInput): Promise<void> => {
-    await addTransaction(input);
+  const handleAddTransactions = async (inputs: TransactionInput[]): Promise<void> => {
+    await addTransactions(inputs);
     refetch();
   };
 
@@ -98,9 +98,10 @@ function App() {
 
       <main className="app-main">
         <section className="form-section">
-          <TransactionForm
-            categories={data.categories}
-            onSubmit={handleAddTransaction}
+          <BulkTransactionForm
+            expenseCategories={data.expenseCategories || data.categories}
+            incomeCategories={data.incomeCategories || []}
+            onSubmit={handleAddTransactions}
           />
         </section>
 

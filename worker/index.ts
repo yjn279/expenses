@@ -4,51 +4,8 @@ interface WorkerEnv {
   GAS_API_URL?: string; // Google Apps Script deployed URL
 }
 
-// Parse Basic auth credentials from environment
-function parseAuthUsers(authString: string | undefined): Map<string, string> {
-  const users = new Map<string, string>();
-  if (!authString) return users;
-
-  authString.split(',').forEach((pair) => {
-    const [username, password] = pair.split(':');
-    if (username && password) {
-      users.set(username.trim(), password.trim());
-    }
-  });
-  return users;
-}
-
-// Validate Basic authentication
-function validateBasicAuth(
-  request: Request,
-  validUsers: Map<string, string>
-): boolean {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return false;
-  }
-
-  try {
-    const base64Credentials = authHeader.slice(6);
-    const credentials = atob(base64Credentials);
-    const [username, password] = credentials.split(':');
-
-    return validUsers.get(username) === password;
-  } catch {
-    return false;
-  }
-}
-
-// Create 401 Unauthorized response
-function unauthorized(): Response {
-  return new Response('Unauthorized', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Expenses Dashboard"',
-      'Content-Type': 'text/plain',
-    },
-  });
-}
+// NOTE: Basic auth functions removed - add back when enabling authentication
+// See git history for parseAuthUsers, validateBasicAuth, unauthorized functions
 
 // Handle GET request - proxy to GAS API
 async function handleGet(env: WorkerEnv): Promise<Response> {
@@ -150,12 +107,6 @@ export default {
     if (!url.pathname.startsWith('/api/')) {
       return new Response(null, { status: 404 });
     }
-
-    // Validate Basic authentication (temporarily disabled for testing)
-    // const validUsers = parseAuthUsers(env.BASIC_AUTH_USERS);
-    // if (validUsers.size > 0 && !validateBasicAuth(request, validUsers)) {
-    //   return unauthorized();
-    // }
 
     // Route based on method
     switch (request.method) {
