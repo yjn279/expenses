@@ -1,58 +1,164 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import cloudflareLogo from './assets/Cloudflare_Logo.svg'
-import './App.css'
+import { useState, useMemo } from 'react';
+import './App.css';
+import { useHouseholdData } from './hooks/useHouseholdData';
+import { addTransaction } from './api/household';
+import { TotalAssetsChart } from './components/TotalAssetsChart';
+import { IncomeExpenseChart } from './components/IncomeExpenseChart';
+import { CategoryExpenseChart } from './components/CategoryExpenseChart';
+import { TransactionForm } from './components/TransactionForm';
+import type { ViewMode, TransactionInput, MonthlyData } from './types';
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [name, setName] = useState('unknown')
+  const { data, loading, error, refetch } = useHouseholdData();
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly');
+
+  // Get last 12 months for monthly view
+  const displayData = useMemo(() => {
+    if (!data) return { chartData: [], categories: [] };
+
+    if (viewMode === 'monthly') {
+      const monthlyData = data.monthlyData.slice(-12);
+      return {
+        chartData: monthlyData,
+        categories: data.categories,
+      };
+    } else {
+      return {
+        chartData: data.yearlyData,
+        categories: data.categories,
+      };
+    }
+  }, [data, viewMode]);
+
+  const handleAddTransaction = async (input: TransactionInput): Promise<void> => {
+    await addTransaction(input);
+    refetch();
+  };
+
+  if (loading) {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <h1>家計簿ダッシュボード</h1>
+        </header>
+        <main className="app-main">
+          <div className="loading">データを読み込み中...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <h1>家計簿ダッシュボード</h1>
+        </header>
+        <main className="app-main">
+          <div className="error">
+            <p>エラーが発生しました</p>
+            <p className="error-message">{error.message}</p>
+            <button onClick={refetch} className="btn-retry">
+              再読み込み
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <h1>家計簿ダッシュボード</h1>
+        </header>
+        <main className="app-main">
+          <div className="error">
+            <p>データがありません</p>
+            <button onClick={refetch} className="btn-retry">
+              再読み込み
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href='https://vite.dev' target='_blank'>
-          <img src={viteLogo} className='logo' alt='Vite logo' />
-        </a>
-        <a href='https://react.dev' target='_blank'>
-          <img src={reactLogo} className='logo react' alt='React logo' />
-        </a>
-        <a href='https://workers.cloudflare.com/' target='_blank'>
-          <img src={cloudflareLogo} className='logo cloudflare' alt='Cloudflare logo' />
-        </a>
-      </div>
-      <h1>Vite + React + Cloudflare</h1>
-      <div className='card'>
-        <button
-          onClick={() => setCount((count) => count + 1)}
-          aria-label='increment'
-        >
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <div className='card'>
-        <button
-          onClick={() => {
-            fetch('/api/')
-              .then((res) => res.json() as Promise<{ name: string }>)
-              .then((data) => setName(data.name))
-          }}
-          aria-label='get name'
-        >
-          Name from API is: {name}
-        </button>
-        <p>
-          Edit <code>worker/index.ts</code> to change the name
-        </p>
-      </div>
-      <p className='read-the-docs'>
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app">
+      <header className="app-header">
+        <h1>家計簿ダッシュボード</h1>
+        <div className="header-actions">
+          <button onClick={refetch} className="btn-refresh">
+            更新
+          </button>
+        </div>
+      </header>
+
+      <main className="app-main">
+        <section className="form-section">
+          <TransactionForm
+            categories={data.categories}
+            onSubmit={handleAddTransaction}
+          />
+        </section>
+
+        <section className="view-toggle">
+          <button
+            className={`toggle-btn ${viewMode === 'monthly' ? 'active' : ''}`}
+            onClick={() => setViewMode('monthly')}
+          >
+            月別
+          </button>
+          <button
+            className={`toggle-btn ${viewMode === 'yearly' ? 'active' : ''}`}
+            onClick={() => setViewMode('yearly')}
+          >
+            年別
+          </button>
+        </section>
+
+        <section className="charts-section">
+          <TotalAssetsChart
+            data={displayData.chartData}
+            isMonthly={viewMode === 'monthly'}
+          />
+
+          <IncomeExpenseChart
+            data={displayData.chartData}
+            isMonthly={viewMode === 'monthly'}
+          />
+
+          <CategoryExpenseChart
+            data={displayData.chartData as MonthlyData[]}
+            categories={displayData.categories}
+            isMonthly={viewMode === 'monthly'}
+          />
+        </section>
+
+        <section className="summary-section">
+          <h3>設定情報</h3>
+          <dl className="settings-list">
+            <dt>開始月</dt>
+            <dd>{data.settings.startMonth}</dd>
+            <dt>初期残高</dt>
+            <dd>
+              {new Intl.NumberFormat('ja-JP', {
+                style: 'currency',
+                currency: 'JPY',
+                maximumFractionDigits: 0,
+              }).format(data.settings.initialBalance)}
+            </dd>
+          </dl>
+        </section>
+      </main>
+
+      <footer className="app-footer">
+        <p>家計簿ダッシュボード</p>
+      </footer>
+    </div>
+  );
 }
 
-export default App
+export default App;

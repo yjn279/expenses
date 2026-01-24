@@ -1,0 +1,9 @@
+# Development environment variables
+# Copy this file to .dev.vars and update the values
+
+# Basic authentication credentials (format: user1:pass1,user2:pass2)
+BASIC_AUTH_USERS=testuser:testpass
+
+# Google Apps Script deployed URL
+# Deploy your GAS as a web app and paste the URL here
+GAS_API_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec

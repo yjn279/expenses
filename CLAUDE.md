@@ -58,6 +58,18 @@ pnpm lint
 pnpm cf-typegen
 ```
 
+## Environment Setup
+
+1. `.dev.vars.example` を `.dev.vars` にコピー
+2. 環境変数を設定:
+   - `BASIC_AUTH_USERS`: Basic認証の認証情報（`user:pass` 形式、カンマ区切りで複数指定可）
+   - `GAS_API_URL`: デプロイ済みGoogle Apps ScriptのURL
+
+```bash
+cp .dev.vars.example .dev.vars
+# .dev.vars を編集して実際の値を設定
+```
+
 ## Data Flow
 
 1. **P/L シート**: 月次の収入・支出を記録（手入力またはPOST API経由）
@@ -85,18 +97,26 @@ POST /api/
 }
 ```
 
-## Implementation Status
+## Project Structure
 
-現在のコードはCloudflare Workersのボイラープレート状態です：
-- Worker (`worker/index.ts`): `/api/` に対して `{name: "Cloudflare"}` を返すサンプル実装
-- Frontend (`src/App.tsx`): カウンターとAPI呼び出しのデモUI
+```
+src/
+├── App.tsx              # メインアプリ（ダッシュボードUI）
+├── api/household.ts     # API呼び出し関数
+├── hooks/useHouseholdData.ts  # データ取得フック
+├── components/
+│   ├── TotalAssetsChart.tsx    # 総資産推移グラフ
+│   ├── IncomeExpenseChart.tsx  # 収入・支出比較グラフ
+│   ├── CategoryExpenseChart.tsx # カテゴリ別支出グラフ
+│   └── TransactionForm.tsx     # 取引入力フォーム
+└── types/index.ts       # 型定義
 
-次の実装が必要です：
-1. Google Apps Scriptの実装とデプロイ
-2. Workerに GAS API プロキシ機能を追加
-3. Recharts を使ったグラフコンポーネント（TotalAssetsChart, IncomeExpenseChart, CategoryExpenseChart）
-4. TransactionForm コンポーネント
-5. データ取得カスタムフック（useHouseholdData）
+worker/
+└── index.ts             # Cloudflare Worker（GAS APIプロキシ）
+
+gas/
+└── Code.gs              # Google Apps Script
+```
 
 ## Deployment
 
