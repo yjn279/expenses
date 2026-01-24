@@ -2,17 +2,10 @@ import { useState, useMemo, useEffect, type FormEvent } from 'react';
 import type { TransactionInput, MonthString, BalanceInput } from '../types';
 import { CategoryAmountInput } from './CategoryAmountInput';
 
-/**
- * 一括取引入力フォームのプロパティ
- */
 interface BulkTransactionFormProps {
-  /** 支出カテゴリの配列 */
   expenseCategories: string[];
-  /** 収入カテゴリの配列 */
   incomeCategories: string[];
-  /** 選択可能な月の配列 */
   selectableMonths: MonthString[];
-  /** フォーム送信時のコールバック関数 */
   onSubmit: (inputs: TransactionInput[], balance: BalanceInput) => Promise<void>;
 }
 
@@ -34,6 +27,38 @@ function validateCategory(category: string): string | null {
   return null;
 }
 
+function validateAmount(
+  amountStr: string,
+  fieldName: string
+): { isValid: boolean; error: string | null; amount: number | null } {
+  if (!amountStr || amountStr === '') {
+    return { isValid: false, error: `${fieldName}を入力してください`, amount: null };
+  }
+
+  const amount = parseInt(amountStr, 10);
+  if (isNaN(amount)) {
+    return { isValid: false, error: `${fieldName}は数値で入力してください`, amount: null };
+  }
+
+  if (amount < 0) {
+    return { isValid: false, error: `${fieldName}は0円以上で入力してください`, amount: null };
+  }
+
+  if (amount > MAX_AMOUNT) {
+    return { isValid: false, error: `${fieldName}は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`, amount: null };
+  }
+
+  return { isValid: true, error: null, amount };
+}
+
+function createInitialAmounts(categories: string[]): Record<string, string> {
+  const amounts: Record<string, string> = {};
+  for (const cat of categories) {
+    amounts[cat] = '0';
+  }
+  return amounts;
+}
+
 export function BulkTransactionForm({
   expenseCategories,
   incomeCategories,
@@ -44,54 +69,40 @@ export function BulkTransactionForm({
     selectableMonths.length > 0 ? selectableMonths[0] : ''
   );
   
-  // すべてのカテゴリを初期値"0"で初期化
-  const initialExpenseAmounts = useMemo(() => {
-    const amounts: Record<string, string> = {};
-    expenseCategories.forEach((cat) => {
-      amounts[cat] = '0';
-    });
-    return amounts;
-  }, [expenseCategories]);
-  
-  const initialIncomeAmounts = useMemo(() => {
-    const amounts: Record<string, string> = {};
-    incomeCategories.forEach((cat) => {
-      amounts[cat] = '0';
-    });
-    return amounts;
-  }, [incomeCategories]);
-  
-  const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>(initialExpenseAmounts);
-  const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>(initialIncomeAmounts);
+  const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>(() =>
+    createInitialAmounts(expenseCategories)
+  );
+  const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>(() =>
+    createInitialAmounts(incomeCategories)
+  );
   const [balance, setBalance] = useState<string>('0');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   
-  // カテゴリが変更されたときに初期値を更新（既存の値は保持）
   useEffect(() => {
     setExpenseAmounts((prev) => {
-      const updated = { ...initialExpenseAmounts };
-      expenseCategories.forEach((cat) => {
+      const updated = createInitialAmounts(expenseCategories);
+      for (const cat of expenseCategories) {
         if (prev[cat] !== undefined) {
           updated[cat] = prev[cat];
         }
-      });
+      }
       return updated;
     });
-  }, [expenseCategories, initialExpenseAmounts]);
+  }, [expenseCategories]);
   
   useEffect(() => {
     setIncomeAmounts((prev) => {
-      const updated = { ...initialIncomeAmounts };
-      incomeCategories.forEach((cat) => {
+      const updated = createInitialAmounts(incomeCategories);
+      for (const cat of incomeCategories) {
         if (prev[cat] !== undefined) {
           updated[cat] = prev[cat];
         }
-      });
+      }
       return updated;
     });
-  }, [incomeCategories, initialIncomeAmounts]);
+  }, [incomeCategories]);
 
   const handleExpenseChange = (category: string, value: string) => {
     setExpenseAmounts((prev) => ({ ...prev, [category]: value }));
@@ -102,13 +113,12 @@ export function BulkTransactionForm({
   };
 
   const filledCount = useMemo(() => {
-    const expenseFilled = Object.values(expenseAmounts).filter(
-      (v) => v !== undefined && v !== '' && parseInt(v, 10) >= 0
-    ).length;
-    const incomeFilled = Object.values(incomeAmounts).filter(
-      (v) => v !== undefined && v !== '' && parseInt(v, 10) >= 0
-    ).length;
-    return expenseFilled + incomeFilled;
+    const countValid = (amounts: Record<string, string>): number => {
+      return Object.values(amounts).filter(
+        (v) => v !== undefined && v !== '' && parseInt(v, 10) >= 0
+      ).length;
+    };
+    return countValid(expenseAmounts) + countValid(incomeAmounts);
   }, [expenseAmounts, incomeAmounts]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -138,30 +148,18 @@ export function BulkTransactionForm({
           return false;
         }
 
-        const amountStr = amounts[category];
-        // 必須項目：空文字列は許可しない
-        if (!amountStr || amountStr === '') {
-          setError(`${category}の金額を入力してください`);
+        const validation = validateAmount(amounts[category], category);
+        if (!validation.isValid) {
+          setError(validation.error!);
           return false;
         }
 
-        const amount = parseInt(amountStr, 10);
-        if (isNaN(amount)) {
-          setError(`${category}の金額は数値で入力してください`);
-          return false;
-        }
-        
-        if (amount < 0) {
-          setError(`${category}の金額は0円以上で入力してください`);
-          return false;
-        }
-
-        if (amount > MAX_AMOUNT) {
-          setError(`${category}の金額は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`);
-          return false;
-        }
-
-        transactions.push({ month: validMonth, category, type, amount });
+        transactions.push({
+          month: validMonth,
+          category,
+          type,
+          amount: validation.amount!,
+        });
       }
       return true;
     }
@@ -174,35 +172,23 @@ export function BulkTransactionForm({
       return;
     }
 
-    // 残高のバリデーション（必須項目）
-    if (!balance || balance === '') {
-      setError('残高を入力してください');
+    const balanceValidation = validateAmount(balance, '残高');
+    if (!balanceValidation.isValid) {
+      setError(balanceValidation.error!);
       return;
     }
-    
-    const balanceValue = parseInt(balance, 10);
-    if (isNaN(balanceValue)) {
-      setError('残高は数値で入力してください');
-      return;
-    }
-    if (balanceValue < 0) {
-      setError('残高は0円以上で入力してください');
-      return;
-    }
-    if (balanceValue > MAX_AMOUNT) {
-      setError(`残高は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`);
-      return;
-    }
-    
-    const balanceInput: BalanceInput = { month: validMonth, balance: balanceValue };
+
+    const balanceInput: BalanceInput = {
+      month: validMonth,
+      balance: balanceValidation.amount!,
+    };
 
     setSubmitting(true);
     try {
       await onSubmit(transactions, balanceInput);
       setSuccess(true);
-      // リセット時も初期値"0"に戻す
-      setExpenseAmounts(initialExpenseAmounts);
-      setIncomeAmounts(initialIncomeAmounts);
+      setExpenseAmounts(createInitialAmounts(expenseCategories));
+      setIncomeAmounts(createInitialAmounts(incomeCategories));
       setBalance('0');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'エラーが発生しました');

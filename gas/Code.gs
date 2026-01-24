@@ -24,7 +24,7 @@ function doGet(e) {
     const data = getHouseholdData();
     return createJsonResponse({ success: true, data: data });
   } catch (error) {
-    return createJsonResponse({ success: false, error: error.message }, 500);
+    return createJsonResponse({ success: false, error: error.message });
   }
 }
 
@@ -35,32 +35,24 @@ function doPost(e) {
   try {
     const input = JSON.parse(e.postData.contents);
 
-    // 残高更新リクエスト: { balance: { month: "YYYY-MM", balance: number } } 形式
     if (input.balance) {
       updateBalance(input.balance);
       return createJsonResponse({ success: true });
     }
 
-    // バッチ入力対応: { transactions: [...] } 形式
     if (input.transactions && Array.isArray(input.transactions)) {
       addTransactions(input.transactions);
     } else {
-      // 単一入力（後方互換）
       addTransaction(input);
     }
 
     return createJsonResponse({ success: true });
   } catch (error) {
-    return createJsonResponse({ success: false, error: error.message }, 400);
+    return createJsonResponse({ success: false, error: error.message });
   }
 }
 
-/**
- * JSONレスポンスを作成
- * @param data - レスポンスデータ
- * @param statusCode - 未使用（Google Apps ScriptのContentServiceはHTTPステータスコードを設定できないため）
- */
-function createJsonResponse(data, statusCode) {
+function createJsonResponse(data) {
   const output = ContentService.createTextOutput(JSON.stringify(data));
   output.setMimeType(ContentService.MimeType.JSON);
   return output;
@@ -216,13 +208,11 @@ function getBalances(ss) {
   const data = sheet.getDataRange().getValues();
   const balances = {};
 
-  // ヘッダー行を除いてデータを探す
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const monthValue = row[0];
     const balanceValue = row[1];
 
-    // 月の形式をチェック（YYYY-MM形式または設定情報のキーでない場合）
     if (monthValue && typeof monthValue === 'string' && /^\d{4}-\d{2}$/.test(monthValue)) {
       const month = formatMonth(monthValue);
       if (month) {
@@ -285,13 +275,10 @@ function aggregateMonthlyData(transactions, settings, balances) {
     const data = monthlyMap[month];
     const profit = data.income - data.expense;
     
-    // B/Sシートから取得した残高があればそれを使用、なければ計算値を使用
     let totalAssets;
     if (balances[month] !== undefined) {
       totalAssets = balances[month];
     } else {
-      // 残高がない場合は、前月の残高から計算
-      // 最初の月の場合は初期残高を使用
       let previousBalance = settings.initialBalance;
       for (let i = 0; i < sortedMonths.length; i++) {
         if (sortedMonths[i] === month) {
@@ -368,13 +355,23 @@ function aggregateYearlyData(monthlyData) {
   });
 }
 
-/**
- * 単一トランザクションのバリデーション
- */
-function validateTransaction(input) {
-  if (!input.month || !/^\d{4}-\d{2}$/.test(input.month)) {
+function validateMonth(month) {
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     throw new Error('Invalid month format. Expected YYYY-MM');
   }
+}
+
+function validateAmount(amount, fieldName) {
+  if (typeof amount !== 'number' || amount < 0) {
+    throw new Error(fieldName + ' must be a non-negative number');
+  }
+  if (amount > 1000000000) {
+    throw new Error(fieldName + ' exceeds maximum allowed value');
+  }
+}
+
+function validateTransaction(input) {
+  validateMonth(input.month);
 
   if (!input.category || typeof input.category !== 'string') {
     throw new Error('Category is required');
@@ -388,13 +385,7 @@ function validateTransaction(input) {
     throw new Error('Type must be "income" or "expense"');
   }
 
-  if (typeof input.amount !== 'number' || input.amount < 0) {
-    throw new Error('Amount must be a non-negative number');
-  }
-
-  if (input.amount > 1000000000) {
-    throw new Error('Amount exceeds maximum allowed value');
-  }
+  validateAmount(input.amount, 'Amount');
 }
 
 /**
@@ -446,22 +437,9 @@ function addTransactions(inputs) {
   sheet.getRange(lastRow + 1, 1, rows.length, 4).setValues(rows);
 }
 
-/**
- * 残高を更新（B/Sシートに月ごとの残高を保存）
- * @param input - { month: "YYYY-MM", balance: number } 形式のオブジェクト
- */
 function updateBalance(input) {
-  if (!input.month || !/^\d{4}-\d{2}$/.test(input.month)) {
-    throw new Error('Invalid month format. Expected YYYY-MM');
-  }
-
-  if (typeof input.balance !== 'number' || input.balance < 0) {
-    throw new Error('Balance must be a non-negative number');
-  }
-
-  if (input.balance > 1000000000) {
-    throw new Error('Balance exceeds maximum allowed value');
-  }
+  validateMonth(input.month);
+  validateAmount(input.balance, 'Balance');
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(BS_SHEET_NAME);
@@ -474,16 +452,13 @@ function updateBalance(input) {
   let found = false;
   const month = formatMonth(input.month);
 
-  // 既存の残高データを探す
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const monthValue = row[0];
     
-    // 月の形式をチェック（YYYY-MM形式で、設定情報のキーでない場合）
     if (monthValue && typeof monthValue === 'string' && /^\d{4}-\d{2}$/.test(monthValue)) {
       const existingMonth = formatMonth(monthValue);
       if (existingMonth === month) {
-        // 既存の行を更新
         sheet.getRange(i + 1, 2).setValue(input.balance);
         found = true;
         break;
@@ -491,7 +466,6 @@ function updateBalance(input) {
     }
   }
 
-  // 見つからなかった場合は新規追加
   if (!found) {
     sheet.appendRow([month, input.balance]);
   }
