@@ -1,28 +1,38 @@
 /**
- * Chart color palette based on "Sunlight through window" concept
+ * Chart color palette - Improved color distinguishability
  *
  * Design theme: 陽だまりの窓 (Sunlight through a window)
  * - Glass: Soft, translucent window pane
  * - Light: Warm golden sunlight gradients
  * - Float: Lightweight, airy elevation
  * - Delicate: Fine window frames and light boundaries
+ * 
+ * Color philosophy: Use distinct, easily distinguishable colors for better data visualization
  */
 
-// Primary color for single-series charts
-export const PRIMARY_CHART_COLOR = '#F5B800';
+// Primary color for total assets chart - blue gradient (growth & assets)
+export const PRIMARY_CHART_COLOR = '#3B82F6'; // Blue
 
 // Two-color palette for income/expense comparison
 export const DUAL_PALETTE = {
-  positive: '#FFB74D',  // Warm golden for income
-  negative: '#FF8A80',  // Soft coral for expense
-  neutral: '#F9A825',   // Deep golden for profit
+  positive: '#22C55E',  // Green for income
+  negative: '#EF4444',  // Red for expense
+  neutral: '#3B82F6',   // Blue for profit
 } as const;
 
 // Multi-category gradient palette (10 colors)
-// Cream to deep amber - yellow tones only
+// Diverse palette with blue, green, purple, orange, pink, etc. for easy distinction
 export const GRADIENT_PALETTE = [
-  '#FFF9C4', '#FFE082', '#FFD54F', '#FFCA28', '#FFB74D',
-  '#FFA726', '#FF9800', '#F9A825', '#F57C00', '#E65100',
+  '#3B82F6', // Blue
+  '#22C55E', // Green
+  '#A855F7', // Purple
+  '#F97316', // Orange
+  '#EC4899', // Pink
+  '#06B6D4', // Cyan
+  '#8B5CF6', // Violet
+  '#10B981', // Emerald
+  '#F59E0B', // Amber
+  '#EF4444', // Red
 ] as const;
 
 // Chart gradients for area fills

@@ -324,7 +324,7 @@ export function BulkTransactionForm({
         <Alert variant="success">
           <CheckCircle2 className="size-4" />
           <AlertDescription>
-            {filledCount}件の取引を追加しました
+            家計簿を記録しました
           </AlertDescription>
         </Alert>
       )}
@@ -338,12 +338,10 @@ export function BulkTransactionForm({
         {submitting ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            追加中...
+            記録中...
           </>
-        ) : filledCount > 0 ? (
-          `まとめて追加（${filledCount}件）`
         ) : (
-          'まとめて追加'
+          '記録する'
         )}
       </Button>
     </form>

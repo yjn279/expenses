@@ -53,8 +53,14 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+        <div className="relative rounded-lg overflow-hidden" style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(240, 248, 255, 0.2) 100%)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
+        }}>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} vertical={false} />
             <XAxis
               dataKey="period"
@@ -116,6 +122,7 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

@@ -84,7 +84,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+        <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
@@ -94,7 +94,7 @@ function App() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+        <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
           <div className="flex flex-col gap-6">
             <Skeleton className="h-10 w-48 mx-auto" />
             <Skeleton className="h-[300px] w-full rounded-xl" />
@@ -110,7 +110,7 @@ function App() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+        <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
@@ -120,7 +120,7 @@ function App() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+        <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
           <Alert variant="destructive" className="glass-card">
             <AlertCircle className="size-4" />
             <AlertDescription className="flex flex-col gap-4">
@@ -140,7 +140,7 @@ function App() {
   if (!data) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+        <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
@@ -150,7 +150,7 @@ function App() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+        <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
           <Alert className="glass-card">
             <AlertCircle className="size-4" />
             <AlertDescription className="flex flex-col gap-4">
@@ -169,7 +169,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="glass-header sticky top-0 z-50 px-4 py-4 md:px-8">
+      <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
@@ -180,7 +180,7 @@ function App() {
           {selectableMonths.length > 0 && (
             <Button onClick={() => setShowForm(true)} size="sm">
               <PlusCircle className="size-4" />
-              入力
+              記録する
             </Button>
           )}
         </div>
@@ -188,35 +188,37 @@ function App() {
 
       {/* Transaction Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>取引を追加</DialogTitle>
+        <DialogContent className="max-h-[90vh] flex flex-col sm:max-w-lg">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>家計簿を記録</DialogTitle>
           </DialogHeader>
-          <BulkTransactionForm
-            expenseCategories={data.expenseCategories || data.categories}
-            incomeCategories={data.incomeCategories || []}
-            selectableMonths={selectableMonths}
-            onSubmit={async (inputs, balanceInput) => {
-              if (inputs.length > 0) {
-                await handleAddTransactions(inputs);
-              }
-              await updateBalance(balanceInput);
-              refetch();
-              setShowForm(false);
-            }}
-          />
+          <div className="flex-1 overflow-y-auto min-h-0 -mx-6 px-6">
+            <BulkTransactionForm
+              expenseCategories={data.expenseCategories || data.categories}
+              incomeCategories={data.incomeCategories || []}
+              selectableMonths={selectableMonths}
+              onSubmit={async (inputs, balanceInput) => {
+                if (inputs.length > 0) {
+                  await handleAddTransactions(inputs);
+                }
+                await updateBalance(balanceInput);
+                refetch();
+                setShowForm(false);
+              }}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
         {/* View Toggle Tabs */}
         <Tabs
           value={viewMode}
           onValueChange={(value) => setViewMode(value as ViewMode)}
           className="mb-8"
         >
-          <TabsList className="mx-auto">
+          <TabsList>
             <TabsTrigger value="monthly" className="px-6">
               月別
             </TabsTrigger>
