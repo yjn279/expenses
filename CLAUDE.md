@@ -47,6 +47,18 @@ pnpm deploy
 # コードのリント
 pnpm lint
 
+# テスト実行
+pnpm test
+
+# テスト（UIモード）
+pnpm test:ui
+
+# テスト（ウォッチモード）
+pnpm test:watch
+
+# テスト（カバレッジレポート）
+pnpm test:coverage
+
 # Cloudflare WorkerのTypeScript型を生成
 pnpm cf-typegen
 ```
@@ -78,6 +90,13 @@ src/
 │   ├── CategoryExpenseChart.tsx # カテゴリ別支出グラフ
 │   ├── BulkTransactionForm.tsx  # 一括取引入力フォーム（モーダル表示）
 │   └── CategoryAmountInput.tsx # カテゴリ別金額入力コンポーネント
+├── utils/
+│   ├── format.ts        # フォーマット関数
+│   ├── format.test.ts   # フォーマット関数のテスト
+│   ├── month.ts         # 月関連のユーティリティ
+│   ├── month.test.ts    # 月関連ユーティリティのテスト
+│   ├── typeGuards.ts    # 型ガード
+│   └── typeGuards.test.ts # 型ガードのテスト
 └── types/index.ts       # 型定義
 
 worker/
