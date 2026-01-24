@@ -1,69 +1,355 @@
-# React + TypeScript + Vite
+# 家計簿ダッシュボード
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Google Spreadsheet をデータベースとして活用し、家計の収支を可視化するWebアプリケーションです。
 
-Currently, two official plugins are available:
+## サービス概要
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+日々の収支をスプレッドシートに記録するだけで、資産推移や支出傾向を自動でグラフ化します。複雑なアプリを使わず、慣れ親しんだスプレッドシートで家計管理を行いたい方に最適です。
 
-## Expanding the ESLint configuration
+### 主な機能
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 総資産額の推移を面グラフで表示
+- 月ごとの収入・支出を正負の棒グラフ、利益を折れ線グラフで表示
+- 支出のカテゴリ別内訳を積み上げ面グラフで表示
+- 月別 / 年別の表示切り替え
+- フロントエンドから収支データを直接入力
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 要件定義
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### 機能要件
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+|ID  |要件             |詳細                               |
+|----|---------------|---------------------------------|
+|F-01|総資産推移の表示       |初期残高と累積収支から算出した総資産を時系列で表示（面グラフ）   |
+|F-02|収支・利益の表示       |収入（正の棒）、支出（負の棒）、利益（折れ線）を同一グラフに表示 |
+|F-03|カテゴリ別支出の表示     |**支出のみ**をカテゴリごとに色分けした積み上げ面グラフで表示  |
+|F-04|表示期間の切り替え      |月別表示と年別表示をボタンで切り替え可能             |
+|F-05|デフォルト表示期間      |**直近12ヶ月**（月別）/ **直近5年**（年別）をデフォルト表示|
+|F-06|データ入力（スプレッドシート）|Google Spreadsheet に月・カテゴリ・金額を手入力|
+|F-07|データ入力（フロントエンド） |画面上のフォームから月・種別・カテゴリ・金額を入力し**追加のみ**可能（編集・削除はスプシで直接行う）|
+|F-08|Basic認証         |URLへのアクセスにBasic認証を要求。家族等複数ユーザー対応 |
+
+### 非機能要件
+
+|ID   |要件     |詳細                              |
+|-----|-------|--------------------------------|
+|NF-01|可用性   |Google Spreadsheet / GAS の可用性に依存|
+|NF-02|保守性   |スプレッドシートのみでデータ管理可能、DB不要         |
+|NF-03|拡張性   |カテゴリは選択式（既存カテゴリから選択 + 新規追加）、マスタ管理不要|
+|NF-04|セキュリティ|Basic認証によるアクセス制限。認証情報はCloudflare環境変数で管理|
+
+### 認証設計
+
+```
+┌─────────────────────────────────────┐
+│  Cloudflare Worker                  │
+│  ┌───────────────────────────────┐  │
+│  │  Basic認証ミドルウェア          │  │
+│  │  - 環境変数: BASIC_AUTH_USERS  │  │
+│  │  - 形式: user1:pass1,user2:pass2 │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- 認証情報は `wrangler secret` で設定
+- 未認証アクセスは 401 Unauthorized を返却
+- 複数ユーザー（家族など）に対応可能
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### エラーハンドリング
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+|状況         |挙動                                |
+|------------|----------------------------------|
+|GAS API通信失敗|エラーメッセージを表示し、リトライボタンを提供      |
+|認証失敗      |401を返却、ブラウザの認証ダイアログを表示       |
+|無効なデータ入力 |フォームバリデーションでブロック、エラーメッセージ表示|
+
+## 設計
+
+### アーキテクチャ
+
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                    Google Spreadsheet                       │
+│  ┌─────────────────────┐    ┌─────────────────────┐        │
+│  │         P/L         │    │         B/S         │        │
+│  │  月次収入・支出データ  │    │  初期残高・開始月     │        │
+│  └─────────────────────┘    └─────────────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+                         ▲
+                         │
+┌─────────────────────────────────────────────────────────────┐
+│                  Google Apps Script                         │
+│              Webアプリとしてデプロイ                          │
+└─────────────────────────────────────────────────────────────┘
+                         ▲
+                         │ fetch (server-to-server)
+┌─────────────────────────────────────────────────────────────┐
+│                  Cloudflare Worker                          │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │
+│  │  Basic認証     │─▶│  /api/* 処理  │─▶│  GAS プロキシ  │   │
+│  └───────────────┘  └───────────────┘  └───────────────┘   │
+│              静的アセット配信（それ以外のパス）                │
+└─────────────────────────────────────────────────────────────┘
+                         ▲
+                         │ HTTPS
+┌─────────────────────────────────────────────────────────────┐
+│                   Frontend (React SPA)                      │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │               入力フォーム                             │  │
+│  └───────────────────────────────────────────────────────┘  │
+│  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐     │
+│  │  総資産推移    │ │  収支・利益    │ │ カテゴリ別支出 │     │
+│  │   (面グラフ)   │ │ (棒+折れ線)   │ │  (積み上げ面)  │     │
+│  └───────────────┘ └───────────────┘ └───────────────┘     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### データ設計
+
+#### シート1: P/L（損益計算書 - 手入力 または API経由で追加）
+
+月次の収入・支出を記録するシートです。
+
+|カラム |型     |説明              |
+|----|------|----------------|
+|月   |String|対象月（YYYY-MM形式）  |
+|カテゴリ|String|収支のカテゴリ（給与、食費など）|
+|金額  |Number|正: 収入 / 負: 支出   |
+
+#### シート2: B/S（貸借対照表 - スプレッドシート関数で自動集計）
+
+初期残高と開始月を管理するシートです。
+
+|カラム |型     |説明              |設定方法   |
+|----|------|----------------|-------|
+|初期残高|Number|記録開始時点の総資産      |手入力    |
+|開始月 |String|記録開始月（YYYY-MM形式）|関数で自動取得|
+
+##### B/S シートの設定例
+
+|A列  |B列                                |
+|----|----------------------------------|
+|初期残高|`500000`（手入力）                     |
+|開始月 |`=TEXT(MIN('P/L'!A:A),"YYYY-MM")` |
+
+開始月は `P/L` シートの最小月を自動取得します。
+
+### API設計
+
+#### GET - データ取得
+
+```
+GET https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec
+```
+
+##### レスポンス
+
+```json
+{
+  "success": true,
+  "data": {
+    "settings": {
+      "initialBalance": 500000,
+      "startMonth": "2025-01"
+    },
+    "monthlyData": [
+      {
+        "month": "2025-01",
+        "income": 250000,
+        "expense": 120000,
+        "profit": 130000,
+        "totalAssets": 630000,
+        "categoryExpense": {
+          "食費": 35000,
+          "光熱費": 15000,
+          "交通費": 10000
+        }
+      }
+    ],
+    "yearlyData": [
+      {
+        "year": "2025",
+        "income": 3000000,
+        "expense": 1800000,
+        "profit": 1200000,
+        "totalAssets": 1700000,
+        "categoryExpense": {
+          "食費": 420000,
+          "光熱費": 180000,
+          "交通費": 120000
+        }
+      }
+    ],
+    "categories": ["食費", "光熱費", "交通費", "娯楽"]
+  }
+}
+```
+
+#### POST - レコード追加
+
+```
+POST https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec
+```
+
+##### リクエスト
+
+```json
+{
+  "month": "2025-01",
+  "category": "食費",
+  "type": "expense",
+  "amount": 3500
+}
+```
+
+|フィールド   |型     |説明                           |
+|--------|------|-----------------------------|
+|month   |String|対象月（YYYY-MM形式）               |
+|category|String|カテゴリ名                        |
+|type    |String|`income`（収入）または `expense`（支出）|
+|amount  |Number|金額（正の数で指定、typeに応じて符号が付与される）  |
+
+##### レスポンス
+
+```json
+{
+  "success": true,
+  "data": {
+    "month": "2025-01",
+    "category": "食費",
+    "amount": -3500
+  }
+}
+```
+
+## セットアップ
+
+### 1. Google Spreadsheet の準備
+
+1. 新規スプレッドシートを作成
+1. シート名を `transactions` と `settings` に変更
+1. `transactions` シートの1行目に `月 | カテゴリ | 金額` を入力
+1. `settings` シートに以下を入力:
+- A1: `初期残高`, B1: `500000`（手入力、任意の金額）
+- A2: `開始月`, B2: `=TEXT(MIN(transactions!A:A),"YYYY-MM")`（関数で自動取得）
+
+### 2. Google Apps Script のデプロイ
+
+1. スプレッドシートのメニューから「拡張機能 → Apps Script」を選択
+1. `Code.gs` に GAS コードを貼り付け
+1. `SHEET_ID` をスプレッドシートのIDに変更
+- URLの `https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit` の部分
+1. 「デプロイ → 新しいデプロイ」をクリック
+1. 種類: 「ウェブアプリ」を選択
+1. アクセスできるユーザー: 「全員」を選択
+1. 「デプロイ」をクリックし、発行されたURLを控える
+
+### 3. フロントエンドのセットアップ
+
+```bash
+# プロジェクト作成
+npm create vite@latest household-app -- --template react
+cd household-app
+
+# 依存パッケージのインストール
+npm install recharts
+
+# 環境変数の設定
+cp .env.example .env
+# .env を編集し、GAS の URL を設定
+# VITE_GAS_API_URL=https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec
+
+# 開発サーバー起動
+npm run dev
+```
+
+### 4. Basic認証の設定
+
+Cloudflare Workers の環境変数（シークレット）として認証情報を設定します。
+
+```bash
+# 認証ユーザーの設定（複数ユーザーはカンマ区切り）
+wrangler secret put BASIC_AUTH_USERS
+# プロンプトに以下の形式で入力:
+# user1:password1,user2:password2
+
+# ローカル開発時は .dev.vars ファイルを使用
+echo 'BASIC_AUTH_USERS=testuser:testpass' > .dev.vars
+```
+
+**注意**: `.dev.vars` ファイルは `.gitignore` に追加し、リポジトリにコミットしないでください。
+
+## ディレクトリ構成
+
+```
+household-app/
+├── public/
+├── src/
+│   ├── api/
+│   │   └── household.js        # API クライアント
+│   ├── components/
+│   │   ├── TotalAssetsChart.jsx    # 総資産推移グラフ
+│   │   ├── IncomeExpenseChart.jsx  # 収支・利益グラフ
+│   │   ├── CategoryExpenseChart.jsx # カテゴリ別支出グラフ
+│   │   └── TransactionForm.jsx     # 収支入力フォーム
+│   ├── hooks/
+│   │   └── useHouseholdData.js # データ取得フック
+│   ├── App.jsx
+│   ├── App.css
+│   └── main.jsx
+├── .env
+├── .env.example
+├── package.json
+└── vite.config.js
+```
+
+## 技術スタック
+
+|領域     |技術                      |
+|-------|------------------------|
+|データストア |Google Spreadsheet      |
+|バックエンド |Google Apps Script (ES6)|
+|フロントエンド|Vite + React            |
+|グラフ描画  |Recharts                |
+
+## 運用
+
+### データ入力
+
+#### スプレッドシートから入力
+
+`transactions` シートに直接データを追加できます。
+
+|月      |カテゴリ|金額    |
+|-------|----|------|
+|2025-01|給与  |250000|
+|2025-01|食費  |-3500 |
+|2025-01|交通費 |-500  |
+
+#### フロントエンドから入力
+
+画面上部の入力フォームから、月・種別・カテゴリ・金額を入力して「追加」ボタンをクリックすると、スプレッドシートにデータが追加されます。
+
+- 種別で「収入」「支出」を選択すると、金額の符号が自動で付与されます
+- 既存カテゴリの選択、または新規カテゴリの追加が可能です
+- 追加後、グラフは自動的に更新されます
+
+### カテゴリの追加
+
+マスタ管理は不要です。新しいカテゴリを入力すれば自動的にグラフに反映されます。
+ただし、表記ゆれ（「食費」と「食品」など）にはご注意ください。
+
+### GASの再デプロイ
+
+GASのコードを更新した場合は、新しいバージョンとしてデプロイが必要です。
+
+1. Apps Script エディタで「デプロイ → デプロイを管理」を選択
+1. 鉛筆アイコンをクリック
+1. バージョンで「新しいバージョン」を選択
+1. 「デプロイ」をクリック
+
+※ URLは変わりません
+
+## ライセンス
+
+MIT
