@@ -12,14 +12,12 @@ import { isMonthlyData, isYearlyData, isNumber } from '../utils/typeGuards';
 import { formatCurrency, formatAxisLabel } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
+import { PRIMARY_CHART_COLOR, CHART_GRADIENTS } from '@/constants/chartColors';
 
 interface TotalAssetsChartProps {
   data: MonthlyData[] | YearlyData[];
   isMonthly: boolean;
 }
-
-// Chart color - warm golden yellow
-const ASSETS_COLOR = '#F5B800';
 
 export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
   const chartData = data.map((item) => {
@@ -45,11 +43,11 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={ASSETS_COLOR} stopOpacity={0.4} />
-                <stop offset="95%" stopColor={ASSETS_COLOR} stopOpacity={0.05} />
+                <stop offset="5%" stopColor={CHART_GRADIENTS.primary.start.color} stopOpacity={CHART_GRADIENTS.primary.start.opacity} />
+                <stop offset="95%" stopColor={CHART_GRADIENTS.primary.end.color} stopOpacity={CHART_GRADIENTS.primary.end.opacity} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} vertical={false} />
             <XAxis
               dataKey="period"
               tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
@@ -72,17 +70,19 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
               }}
               labelStyle={{ color: 'hsl(var(--foreground))' }}
               contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
                 borderRadius: 'var(--radius)',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                boxShadow: '0 8px 16px 0 rgba(245, 184, 0, 0.12)',
               }}
             />
             <Area
               type="monotone"
               dataKey="totalAssets"
-              stroke={ASSETS_COLOR}
-              strokeWidth={2}
+              stroke={PRIMARY_CHART_COLOR}
+              strokeWidth={2.5}
               fill="url(#colorAssets)"
             />
           </AreaChart>

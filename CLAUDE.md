@@ -82,6 +82,7 @@ cp .dev.vars.example .dev.vars
 ```
 src/
 ├── App.tsx              # メインアプリ（ダッシュボードUI）
+├── index.css            # グローバルスタイル（Tailwind + グラスモーフィズム）
 ├── api/household.ts     # API呼び出し関数
 ├── hooks/useHouseholdData.ts  # データ取得フック
 ├── components/
@@ -90,6 +91,8 @@ src/
 │   ├── CategoryExpenseChart.tsx # カテゴリ別支出グラフ
 │   ├── BulkTransactionForm.tsx  # 一括取引入力フォーム（モーダル表示）
 │   └── CategoryAmountInput.tsx # カテゴリ別金額入力コンポーネント
+├── constants/
+│   └── chartColors.ts   # チャートカラーパレット定義（Golden Sunlight Palette）
 ├── utils/
 │   ├── format.ts        # フォーマット関数
 │   ├── format.test.ts   # フォーマット関数のテスト

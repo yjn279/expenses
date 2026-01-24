@@ -13,32 +13,13 @@ import { isMonthlyData, isYearlyData, isNumber, isString } from '../utils/typeGu
 import { formatCurrency, formatAxisLabel } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { PieChart } from 'lucide-react';
+import { GRADIENT_PALETTE } from '@/constants/chartColors';
 
 interface CategoryExpenseChartProps {
   data: MonthlyData[] | YearlyData[];
   categories: string[];
   isMonthly: boolean;
 }
-
-// Warm, inviting color palette
-const COLORS = [
-  '#FF8A80',  // Rose coral
-  '#FFB74D',  // Warm orange
-  '#FFD54F',  // Golden yellow
-  '#81C784',  // Soft green
-  '#4ECDC4',  // Mint
-  '#64B5F6',  // Sky blue
-  '#9575CD',  // Soft purple
-  '#F06292',  // Pink
-  '#A1887F',  // Warm brown
-  '#90A4AE',  // Blue grey
-  '#AED581',  // Light green
-  '#4DD0E1',  // Cyan
-  '#BA68C8',  // Purple
-  '#FF8A65',  // Deep orange
-  '#DCE775',  // Lime
-  '#7986CB',  // Indigo
-];
 
 export function CategoryExpenseChart({
   data,
@@ -71,7 +52,7 @@ export function CategoryExpenseChart({
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} vertical={false} />
             <XAxis
               dataKey="period"
               tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
@@ -94,10 +75,12 @@ export function CategoryExpenseChart({
               }}
               labelStyle={{ color: 'hsl(var(--foreground))' }}
               contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
                 borderRadius: 'var(--radius)',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                boxShadow: '0 8px 16px 0 rgba(245, 184, 0, 0.12)',
               }}
             />
             <Legend
@@ -109,9 +92,9 @@ export function CategoryExpenseChart({
                 type="monotone"
                 dataKey={category}
                 stackId="1"
-                stroke={COLORS[index % COLORS.length]}
-                fill={COLORS[index % COLORS.length]}
-                fillOpacity={0.7}
+                stroke={GRADIENT_PALETTE[index % GRADIENT_PALETTE.length]}
+                fill={GRADIENT_PALETTE[index % GRADIENT_PALETTE.length]}
+                fillOpacity={0.75}
               />
             ))}
           </AreaChart>
