@@ -14,6 +14,15 @@ interface TotalAssetsChartProps {
   isMonthly: boolean;
 }
 
+// Type guard functions
+function isMonthlyData(item: MonthlyData | YearlyData): item is MonthlyData {
+  return 'month' in item;
+}
+
+function isYearlyData(item: MonthlyData | YearlyData): item is YearlyData {
+  return 'year' in item;
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -34,7 +43,9 @@ function formatAxisLabel(value: number): string {
 
 export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
   const chartData = data.map((item) => ({
-    period: isMonthly ? (item as MonthlyData).month : (item as YearlyData).year,
+    period: isMonthly
+      ? (isMonthlyData(item) ? item.month : '')
+      : (isYearlyData(item) ? item.year : ''),
     totalAssets: item.totalAssets,
   }));
 

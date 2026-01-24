@@ -62,7 +62,16 @@ function createJsonResponse(data, statusCode) {
  * 家計簿データを取得
  */
 function getHouseholdData() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (!SPREADSHEET_ID) {
+    throw new Error('SPREADSHEET_ID is not configured');
+  }
+
+  let ss;
+  try {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  } catch (error) {
+    throw new Error('Failed to open spreadsheet: ' + error.message);
+  }
 
   // 設定情報を取得
   const settings = getSettings(ss);
@@ -166,19 +175,6 @@ function formatMonth(value) {
   }
 
   return String(value);
-}
-
-/**
- * カテゴリ一覧を抽出（重複排除）- 後方互換用
- */
-function extractCategories(transactions) {
-  const categorySet = {};
-  transactions.forEach(function(t) {
-    if (t.category && t.type === 'expense') {
-      categorySet[t.category] = true;
-    }
-  });
-  return Object.keys(categorySet).sort();
 }
 
 /**
@@ -323,6 +319,10 @@ function validateTransaction(input) {
 
   if (!input.category || typeof input.category !== 'string') {
     throw new Error('Category is required');
+  }
+
+  if (input.category.length < 1 || input.category.length > 50) {
+    throw new Error('Category name must be between 1 and 50 characters');
   }
 
   if (input.type !== 'income' && input.type !== 'expense') {

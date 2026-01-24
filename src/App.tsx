@@ -6,6 +6,7 @@ import { TotalAssetsChart } from './components/TotalAssetsChart';
 import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
 import { BulkTransactionForm } from './components/BulkTransactionForm';
+import { normalizeMonth } from './utils/month';
 import type { ViewMode, TransactionInput, MonthlyData } from './types';
 
 function App() {
@@ -34,24 +35,6 @@ function App() {
   // Calculate selectable months (months not in monthlyData, from startMonth to two months ago)
   const selectableMonths = useMemo(() => {
     if (!data) return [];
-
-    // Helper function to normalize month string to YYYY-MM format
-    const normalizeMonth = (monthStr: string): string | null => {
-      if (!monthStr || typeof monthStr !== 'string') return null;
-      
-      // Already in YYYY-MM format
-      if (/^\d{4}-\d{2}$/.test(monthStr)) {
-        return monthStr;
-      }
-      
-      // Try to parse as date (handles Date strings like 'Mon Sep 01 2025...' or ISO format)
-      const date = new Date(monthStr);
-      if (!isNaN(date.getTime())) {
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      }
-      
-      return null;
-    };
 
     // Normalize all months in monthlyData
     const existingMonths = new Set(

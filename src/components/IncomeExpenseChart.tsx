@@ -17,6 +17,15 @@ interface IncomeExpenseChartProps {
   isMonthly: boolean;
 }
 
+// Type guard functions
+function isMonthlyData(item: MonthlyData | YearlyData): item is MonthlyData {
+  return 'month' in item;
+}
+
+function isYearlyData(item: MonthlyData | YearlyData): item is YearlyData {
+  return 'year' in item;
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -38,7 +47,9 @@ function formatAxisLabel(value: number): string {
 
 export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps) {
   const chartData = data.map((item) => ({
-    period: isMonthly ? (item as MonthlyData).month : (item as YearlyData).year,
+    period: isMonthly
+      ? (isMonthlyData(item) ? item.month : '')
+      : (isYearlyData(item) ? item.year : ''),
     income: item.income,
     expense: -item.expense, // Show as negative for visual clarity
     profit: item.profit,

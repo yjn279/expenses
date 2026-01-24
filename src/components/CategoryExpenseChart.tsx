@@ -16,6 +16,15 @@ interface CategoryExpenseChartProps {
   isMonthly: boolean;
 }
 
+// Type guard functions
+function isMonthlyData(item: MonthlyData | YearlyData): item is MonthlyData {
+  return 'month' in item;
+}
+
+function isYearlyData(item: MonthlyData | YearlyData): item is YearlyData {
+  return 'year' in item;
+}
+
 // Color palette for categories
 const COLORS = [
   '#f44336', '#e91e63', '#9c27b0', '#673ab7',
@@ -50,8 +59,8 @@ export function CategoryExpenseChart({
   // Transform data to include all categories
   const chartData = data.map((item) => {
     const period = isMonthly
-      ? (item as MonthlyData).month
-      : (item as YearlyData).year;
+      ? (isMonthlyData(item) ? item.month : '')
+      : (isYearlyData(item) ? item.year : '');
 
     const categoryValues: Record<string, number> = {};
     categories.forEach((category) => {

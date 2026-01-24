@@ -10,6 +10,8 @@ interface BulkTransactionFormProps {
 }
 
 const MAX_AMOUNT = 1_000_000_000; // 10億
+const MIN_CATEGORY_LENGTH = 1;
+const MAX_CATEGORY_LENGTH = 50;
 
 export function BulkTransactionForm({
   expenseCategories,
@@ -59,6 +61,14 @@ export function BulkTransactionForm({
 
     // Add expense transactions
     for (const category of expenseCategories) {
+      // Validate category name length
+      if (category.length < MIN_CATEGORY_LENGTH || category.length > MAX_CATEGORY_LENGTH) {
+        setError(
+          `カテゴリ名「${category}」の長さが無効です（${MIN_CATEGORY_LENGTH}-${MAX_CATEGORY_LENGTH}文字）`
+        );
+        return;
+      }
+
       const amountStr = expenseAmounts[category];
       if (amountStr) {
         const amount = parseInt(amountStr, 10);
@@ -76,6 +86,14 @@ export function BulkTransactionForm({
 
     // Add income transactions
     for (const category of incomeCategories) {
+      // Validate category name length
+      if (category.length < MIN_CATEGORY_LENGTH || category.length > MAX_CATEGORY_LENGTH) {
+        setError(
+          `カテゴリ名「${category}」の長さが無効です（${MIN_CATEGORY_LENGTH}-${MAX_CATEGORY_LENGTH}文字）`
+        );
+        return;
+      }
+
       const amountStr = incomeAmounts[category];
       if (amountStr) {
         const amount = parseInt(amountStr, 10);
@@ -103,8 +121,10 @@ export function BulkTransactionForm({
       // Clear all amounts
       setExpenseAmounts({});
       setIncomeAmounts({});
+      // Focus management: after successful submission, focus stays on submit button
     } catch (e) {
       setError(e instanceof Error ? e.message : 'エラーが発生しました');
+      // Focus management: on error, focus should remain on form for keyboard navigation
     } finally {
       setSubmitting(false);
     }
@@ -173,9 +193,15 @@ export function BulkTransactionForm({
         </>
       )}
 
-      {error && <div className="form-error">{error}</div>}
+      {error && (
+        <div className="form-error" role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
       {success && (
-        <div className="form-success">{filledCount}件の取引を追加しました</div>
+        <div className="form-success" role="status" aria-live="polite">
+          {filledCount}件の取引を追加しました
+        </div>
       )}
 
       <button
