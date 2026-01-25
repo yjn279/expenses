@@ -262,7 +262,7 @@ function App() {
         <div className="mb-6">
           <KPISummaryPanel
             data={viewMode === 'monthly' ? data.monthlyData : data.yearlyData.map(y => ({
-              month: `${y.year}-01` as const,
+              month: `${y.year}-01` as MonthString,
               income: y.income,
               expense: y.expense,
               profit: y.profit,
