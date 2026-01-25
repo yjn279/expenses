@@ -1,68 +1,260 @@
+@import "tailwindcss";
+
+/* Define theme colors using @theme directive for Tailwind v4 */
+@theme {
+  /* 背景 - クリーム系 */
+  --color-background: hsl(48 100% 99%);
+  --color-foreground: hsl(30 10% 15%);
+
+  /* カード - ガラス効果用 */
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(30 10% 15%);
+
+  /* Popover */
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(30 10% 15%);
+
+  /* Primary - 陽光イエロー */
+  --color-primary: hsl(45 100% 48%);
+  --color-primary-foreground: hsl(30 10% 15%);
+
+  /* Secondary */
+  --color-secondary: hsl(45 100% 94%);
+  --color-secondary-foreground: hsl(30 10% 25%);
+
+  /* Muted */
+  --color-muted: hsl(40 20% 96%);
+  --color-muted-foreground: hsl(30 5% 40%);
+
+  /* Accent */
+  --color-accent: hsl(45 100% 70%);
+  --color-accent-foreground: hsl(30 10% 15%);
+
+  /* Destructive - ローズコーラル */
+  --color-destructive: hsl(0 70% 75%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  /* Border & Input */
+  --color-border: hsl(30 10% 90%);
+  --color-input: hsl(30 10% 90%);
+  --color-ring: hsl(45 100% 48%);
+
+  /* Radius */
+  --radius: 0.75rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* CSS Variables for component usage */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --background: 48 100% 99%;
+  --foreground: 30 10% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 30 10% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 30 10% 15%;
+  --primary: 45 100% 48%;
+  --primary-foreground: 30 10% 15%;
+  --secondary: 45 100% 94%;
+  --secondary-foreground: 30 10% 25%;
+  --muted: 40 20% 96%;
+  --muted-foreground: 30 5% 40%;
+  --accent: 45 100% 70%;
+  --accent-foreground: 30 10% 15%;
+  --destructive: 0 70% 75%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 30 10% 90%;
+  --input: 30 10% 90%;
+  --ring: 45 100% 48%;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Chart colors */
+  --chart-1: 174 62% 56%;
+  --chart-2: 0 100% 75%;
+  --chart-3: 262 100% 65%;
+  --chart-4: 45 100% 48%;
+  --chart-5: 160 60% 45%;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  /* Sidebar */
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
+}
+
+/* Base styles */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.glass-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Animation keyframes for shadcn/ui components */
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  a:hover {
-    color: #747bff;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@keyframes animate-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
   }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-0.5rem);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(0.5rem);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoom-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Animation classes */
+.animate-in {
+  animation: animate-in 0.2s ease-out;
+}
+
+.animate-out {
+  animation: animate-out 0.2s ease-in;
+}
+
+.fade-in-0 {
+  animation: fade-in 0.2s ease-out;
+}
+
+.fade-out-0 {
+  animation: fade-out 0.2s ease-in;
+}
+
+.zoom-in-95 {
+  animation: zoom-in 0.2s ease-out;
+}
+
+.zoom-out-95 {
+  animation: zoom-out 0.2s ease-in;
+}
+
+.slide-in-from-top-2 {
+  animation: slide-in-from-top 0.2s ease-out;
+}
+
+.slide-in-from-bottom-2 {
+  animation: slide-in-from-bottom 0.2s ease-out;
 }

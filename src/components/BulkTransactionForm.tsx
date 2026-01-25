@@ -1,6 +1,13 @@
 import { useState, useMemo, useEffect, type FormEvent } from 'react';
 import type { TransactionInput, MonthString, BalanceInput } from '../types';
 import { CategoryAmountInput } from './CategoryAmountInput';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, CheckCircle2, AlertCircle, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
 interface BulkTransactionFormProps {
   expenseCategories: string[];
@@ -68,7 +75,7 @@ export function BulkTransactionForm({
   const [month, setMonth] = useState<MonthString | ''>(
     selectableMonths.length > 0 ? selectableMonths[0] : ''
   );
-  
+
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>(() =>
     createInitialAmounts(expenseCategories)
   );
@@ -79,7 +86,7 @@ export function BulkTransactionForm({
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  
+
   useEffect(() => {
     setExpenseAmounts((prev) => {
       const updated = createInitialAmounts(expenseCategories);
@@ -91,7 +98,7 @@ export function BulkTransactionForm({
       return updated;
     });
   }, [expenseCategories]);
-  
+
   useEffect(() => {
     setIncomeAmounts((prev) => {
       const updated = createInitialAmounts(incomeCategories);
@@ -131,7 +138,6 @@ export function BulkTransactionForm({
       return;
     }
 
-    // この時点で month は有効な MonthString であることが保証されている
     const validMonth = month as MonthString;
 
     const transactions: TransactionInput[] = [];
@@ -201,53 +207,74 @@ export function BulkTransactionForm({
     expenseCategories.length > 0 || incomeCategories.length > 0;
 
   return (
-    <form className="bulk-transaction-form" onSubmit={handleSubmit}>
-      <h3>取引を追加</h3>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Month and Balance */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="bulk-month">月</Label>
+          <Select
+            value={month}
+            onValueChange={(value) => {
+              if (isValidMonthString(value, selectableMonths)) {
+                setMonth(value);
+              }
+            }}
+          >
+            <SelectTrigger id="bulk-month" className="w-full">
+              <SelectValue placeholder="月を選択" />
+            </SelectTrigger>
+            <SelectContent>
+              {selectableMonths.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="form-row">
-        <label htmlFor="bulk-month">月</label>
-        <select
-          id="bulk-month"
-          value={month}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (isValidMonthString(value, selectableMonths)) {
-              setMonth(value);
-            }
-          }}
-          required
-        >
-          {selectableMonths.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+        <div className="space-y-2">
+          <Label htmlFor="bulk-balance" className="flex items-center gap-1.5">
+            <Wallet className="size-3.5" />
+            残高
+          </Label>
+          <div className="relative">
+            <Input
+              id="bulk-balance"
+              type="number"
+              min="0"
+              max={MAX_AMOUNT}
+              value={balance}
+              onChange={(e) => setBalance(e.target.value)}
+              className="pr-8"
+              required
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              円
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="form-row">
-        <label htmlFor="bulk-balance">残高</label>
-        <input
-          id="bulk-balance"
-          type="number"
-          min="0"
-          max={MAX_AMOUNT}
-          value={balance}
-          onChange={(e) => setBalance(e.target.value)}
-          required
-        />
-      </div>
+      <Separator />
 
       {!hasCategories ? (
-        <div className="no-categories-message">
-          カテゴリがありません。P/Lシートにデータを追加してください。
-        </div>
+        <Alert>
+          <AlertCircle className="size-4" />
+          <AlertDescription>
+            カテゴリがありません。P/Lシートにデータを追加してください。
+          </AlertDescription>
+        </Alert>
       ) : (
-        <>
+        <div className="space-y-6">
+          {/* Expense Categories */}
           {expenseCategories.length > 0 && (
-            <div className="category-section">
-              <h4>支出</h4>
-              <div className="category-list">
+            <div className="space-y-3">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <TrendingDown className="size-4 text-destructive" />
+                支出
+              </h4>
+              <div className="space-y-2">
                 {expenseCategories.map((category) => (
                   <CategoryAmountInput
                     key={`expense-${category}`}
@@ -261,10 +288,14 @@ export function BulkTransactionForm({
             </div>
           )}
 
+          {/* Income Categories */}
           {incomeCategories.length > 0 && (
-            <div className="category-section">
-              <h4>収入</h4>
-              <div className="category-list">
+            <div className="space-y-3">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <TrendingUp className="size-4 text-emerald-600" />
+                収入
+              </h4>
+              <div className="space-y-2">
                 {incomeCategories.map((category) => (
                   <CategoryAmountInput
                     key={`income-${category}`}
@@ -277,31 +308,44 @@ export function BulkTransactionForm({
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
+      {/* Error Alert */}
       {error && (
-        <div className="form-error" role="alert" aria-live="polite">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="form-success" role="status" aria-live="polite">
-          {filledCount}件の取引を追加しました
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="size-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <button
+      {/* Success Alert */}
+      {success && (
+        <Alert variant="success">
+          <CheckCircle2 className="size-4" />
+          <AlertDescription>
+            {filledCount}件の取引を追加しました
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Submit Button */}
+      <Button
         type="submit"
-        className="btn-submit"
+        className="w-full"
         disabled={submitting || !hasCategories}
       >
-        {submitting
-          ? '追加中...'
-          : filledCount > 0
-          ? `まとめて追加（${filledCount}件）`
-          : 'まとめて追加'}
-      </button>
+        {submitting ? (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            追加中...
+          </>
+        ) : filledCount > 0 ? (
+          `まとめて追加（${filledCount}件）`
+        ) : (
+          'まとめて追加'
+        )}
+      </Button>
     </form>
   );
 }
