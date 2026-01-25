@@ -39,12 +39,7 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative rounded-lg overflow-hidden" style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(240, 248, 255, 0.2) 100%)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
-        }}>
+        <div className="relative rounded-lg overflow-hidden">
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
             <defs>

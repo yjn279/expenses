@@ -5,15 +5,56 @@ import { TotalAssetsChart } from './components/TotalAssetsChart';
 import { IncomeExpenseChart } from './components/IncomeExpenseChart';
 import { CategoryExpenseChart } from './components/CategoryExpenseChart';
 import { BulkTransactionForm } from './components/BulkTransactionForm';
+import { KPISummaryPanel } from './components/KPISummaryPanel';
 import { normalizeMonth } from './utils/month';
 import type { ViewMode, TransactionInput, MonthString } from './types';
 
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlusCircle, RefreshCw, AlertCircle, Wallet } from 'lucide-react';
+
+// iOS-style Switch Component
+function ViewModeSwitch({
+  value,
+  onChange,
+}: {
+  value: ViewMode;
+  onChange: (value: ViewMode) => void;
+}) {
+  const options: { value: ViewMode; label: string }[] = [
+    { value: 'monthly', label: '月別' },
+    { value: 'yearly', label: '年別' },
+  ];
+
+  const activeIndex = options.findIndex((opt) => opt.value === value);
+
+  return (
+    <div className="ios-switch">
+      {/* スライドするインジケーター */}
+      <div
+        className="ios-switch-indicator"
+        style={{
+          left: activeIndex === 0 ? '3px' : '50%',
+          width: 'calc(50% - 3px)',
+        }}
+      />
+      {/* オプションボタン */}
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          className="ios-switch-option"
+          data-active={value === option.value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function App() {
   const { data, loading, error, refetch } = useHouseholdData();
@@ -83,7 +124,7 @@ function App() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
@@ -109,7 +150,7 @@ function App() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
@@ -139,7 +180,7 @@ function App() {
   // No data state
   if (!data) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-3">
@@ -167,7 +208,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
@@ -212,57 +253,42 @@ function App() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
-        {/* View Toggle Tabs */}
-        <Tabs
-          value={viewMode}
-          onValueChange={(value) => setViewMode(value as ViewMode)}
-          className="mb-8"
-        >
-          <TabsList>
-            <TabsTrigger value="monthly" className="px-6">
-              月別
-            </TabsTrigger>
-            <TabsTrigger value="yearly" className="px-6">
-              年別
-            </TabsTrigger>
-          </TabsList>
+        {/* View Mode Switch - iOS style */}
+        <div className="flex justify-start mb-6">
+          <ViewModeSwitch value={viewMode} onChange={setViewMode} />
+        </div>
 
-          <TabsContent value="monthly" className="mt-6">
-            <div className="flex flex-col gap-6">
-              <TotalAssetsChart
-                data={displayData.chartData}
-                isMonthly={true}
-              />
-              <IncomeExpenseChart
-                data={displayData.chartData}
-                isMonthly={true}
-              />
-              <CategoryExpenseChart
-                data={displayData.chartData}
-                categories={displayData.categories}
-                isMonthly={true}
-              />
-            </div>
-          </TabsContent>
+        {/* KPI Summary Panel */}
+        <div className="mb-6">
+          <KPISummaryPanel
+            data={viewMode === 'monthly' ? data.monthlyData : data.yearlyData.map(y => ({
+              month: `${y.year}-01` as const,
+              income: y.income,
+              expense: y.expense,
+              profit: y.profit,
+              totalAssets: y.totalAssets,
+              categoryExpense: y.categoryExpense,
+            }))}
+            viewMode={viewMode}
+          />
+        </div>
 
-          <TabsContent value="yearly" className="mt-6">
-            <div className="flex flex-col gap-6">
-              <TotalAssetsChart
-                data={displayData.chartData}
-                isMonthly={false}
-              />
-              <IncomeExpenseChart
-                data={displayData.chartData}
-                isMonthly={false}
-              />
-              <CategoryExpenseChart
-                data={displayData.chartData}
-                categories={displayData.categories}
-                isMonthly={false}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
+        {/* Charts */}
+        <div className="flex flex-col gap-6 animate-fade-in">
+          <TotalAssetsChart
+            data={displayData.chartData}
+            isMonthly={viewMode === 'monthly'}
+          />
+          <IncomeExpenseChart
+            data={displayData.chartData}
+            isMonthly={viewMode === 'monthly'}
+          />
+          <CategoryExpenseChart
+            data={displayData.chartData}
+            categories={displayData.categories}
+            isMonthly={viewMode === 'monthly'}
+          />
+        </div>
       </main>
     </div>
   );

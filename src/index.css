@@ -92,13 +92,24 @@
   border-color: var(--color-border);
 }
 
+/* 選択時の色 */
+::selection {
+  background: rgba(251, 191, 36, 0.25);
+  color: inherit;
+}
+
 body {
-  background-color: var(--color-background);
+  /* モダンで大胆な背景 - 対角配置 */
+  background-color: #FEFEFE;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(255, 249, 196, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(245, 184, 0, 0.15) 0%, transparent 50%);
+    /* 中央やや左・上 - 大きめのアクセント */
+    radial-gradient(circle 280px at 30% 35%, rgba(253, 224, 71, 0.35) 0%, transparent 70%),
+    /* 右下 - メインブロブ */
+    radial-gradient(ellipse 50% 50% at 100% 100%, rgba(251, 191, 36, 0.4) 0%, transparent 70%);
+  background-attachment: fixed;
+  min-height: 100vh;
   color: var(--color-foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -113,37 +124,34 @@ body {
 }
 
 .glass-card {
-  /* より透明なグラデーション背景 */
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 249, 196, 0.25) 100%
-  );
+  position: relative;
 
-  /* 強いblur効果 */
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  /* グラスモーフィズム背景 */
+  background: rgba(255, 255, 255, 0.55);
 
-  /* 繊細なborder - 光の反射を表現 */
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-top: 1px solid rgba(255, 255, 255, 0.8);
-  border-left: 1px solid rgba(255, 255, 255, 0.8);
+  /* blur + saturateで背景色を引き立てる */
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 
-  /* 浮遊感のある影 + inset highlight */
+  /* 洗練されたボーダー */
+  border: 1px solid rgba(255, 255, 255, 0.7);
+
+  /* 多層シャドウで奥行き */
   box-shadow:
-    0 8px 32px 0 rgba(245, 184, 0, 0.1),
-    0 2px 8px 0 rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 2px 4px rgba(0, 0, 0, 0.02),
+    0 8px 24px rgba(0, 0, 0, 0.03);
 
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.65);
+  transform: translateY(-1px);
   box-shadow:
-    0 12px 40px 0 rgba(245, 184, 0, 0.15),
-    0 4px 12px 0 rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.03),
+    0 12px 32px rgba(0, 0, 0, 0.05);
 }
 
 .glass-header {
@@ -153,65 +161,31 @@ body {
   right: 0;
   z-index: 50;
 
-  background: linear-gradient(
-    135deg,
-    rgba(255, 249, 196, 0.6) 0%,
-    rgba(255, 235, 150, 0.5) 50%,
-    rgba(255, 249, 196, 0.4) 100%
-  );
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
 
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-
-  box-shadow:
-    0 4px 24px 0 rgba(245, 184, 0, 0.15),
-    0 2px 8px 0 rgba(245, 184, 0, 0.1),
-    0 1px 0 0 rgba(255, 255, 255, 0.7) inset,
-    0 -1px 0 0 rgba(245, 184, 0, 0.1) inset;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.glass-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: radial-gradient(
-    ellipse at top center,
-    rgba(255, 249, 196, 0.4) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
-.glass-header > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Custom scrollbar */
+/* Custom scrollbar - 繊細なデザイン */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-muted);
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* Dialog scrollbar - ensure it stays inside */
@@ -270,11 +244,24 @@ body {
 @keyframes fade-in {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
+
+/* コンテンツのフェードインアニメーション */
+.animate-fade-in {
+  animation: fade-in 0.5s cubic-bezier(0.2, 0, 0.2, 1) both;
+}
+
+/* チャートカードのスタガーアニメーション */
+.glass-card:nth-child(1) { animation-delay: 0s; }
+.glass-card:nth-child(2) { animation-delay: 0.05s; }
+.glass-card:nth-child(3) { animation-delay: 0.1s; }
+.glass-card:nth-child(4) { animation-delay: 0.15s; }
 
 @keyframes fade-out {
   from {
@@ -358,7 +345,54 @@ body {
   animation: slide-in-from-bottom 0.2s ease-out;
 }
 
-/* Glassmorphism tabs */
+/* iPhone-style Switch Toggle */
+.ios-switch {
+  display: inline-flex;
+  position: relative;
+  padding: 3px;
+  border-radius: 10px;
+
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.ios-switch-option {
+  position: relative;
+  z-index: 1;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.ios-switch-option:hover {
+  color: hsl(var(--foreground));
+}
+
+.ios-switch-option[data-active="true"] {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+/* スライドするインジケーター */
+.ios-switch-indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  background: #fff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+/* Glassmorphism tabs (legacy, keeping for compatibility) */
 .glass-tabs-list {
   background: linear-gradient(
     135deg,
@@ -376,7 +410,10 @@ body {
 
 .glass-tabs-trigger {
   color: hsl(var(--muted-foreground));
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
@@ -384,39 +421,45 @@ body {
 .glass-tabs-trigger:hover {
   color: hsl(var(--foreground));
   background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
 }
 
 .glass-tabs-active {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.85) 0%,
-    rgba(255, 249, 196, 0.65) 100%
+    rgba(255, 255, 255, 0.9),
+    rgba(254, 243, 199, 0.7)
   );
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: hsl(var(--foreground));
   font-weight: 600;
-  border: 1px solid rgba(245, 184, 0, 0.4);
-  border-top: 1px solid rgba(255, 255, 255, 0.9);
-  border-left: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
   box-shadow:
-    0 2px 12px 0 rgba(245, 184, 0, 0.2),
-    0 1px 0 0 rgba(255, 255, 255, 0.8) inset,
-    0 -1px 0 0 rgba(245, 184, 0, 0.15) inset;
+    0 2px 8px rgba(245, 158, 11, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transform: translateY(-1px);
 }
 
-.glass-tabs-active::before {
+.glass-tabs-active::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  bottom: -2px;
   left: 0;
   right: 0;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(245, 184, 0, 0.6) 0%,
-    rgba(245, 184, 0, 0.3) 100%
-  );
-  border-radius: 2px 2px 0 0;
+  height: 3px;
+  background: linear-gradient(90deg, #F59E0B, #FBBF24);
+  border-radius: 2px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }
