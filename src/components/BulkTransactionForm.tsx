@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import type { TransactionInput, MonthString, BalanceInput } from '../types';
 import { CategoryAmountInput } from './CategoryAmountInput';
 import { Button } from '@/components/ui/button';
@@ -118,15 +118,6 @@ export function BulkTransactionForm({
   const handleIncomeChange = (category: string, value: string) => {
     setIncomeAmounts((prev) => ({ ...prev, [category]: value }));
   };
-
-  const filledCount = useMemo(() => {
-    const countValid = (amounts: Record<string, string>): number => {
-      return Object.values(amounts).filter(
-        (v) => v !== undefined && v !== '' && parseInt(v, 10) >= 0
-      ).length;
-    };
-    return countValid(expenseAmounts) + countValid(incomeAmounts);
-  }, [expenseAmounts, incomeAmounts]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
