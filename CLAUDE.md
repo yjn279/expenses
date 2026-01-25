@@ -8,11 +8,11 @@
 
 ## アーキテクチャ概要
 
-このプロジェクトは **Cloudflare Workers + Vite + React** のフルスタック構成です：
+このプロジェクトは **Cloudflare Workers + Vite + React + PWA** のフルスタック構成です：
 
 ```mermaid
 graph TB
-    Frontend["フロントエンド (Vite + React)<br/>- src/App.tsx (Reactコンポーネント)<br/>- src/main.tsx (エントリーポイント)"]
+    Frontend["フロントエンド (Vite + React + PWA)<br/>- src/App.tsx (Reactコンポーネント)<br/>- src/main.tsx (エントリーポイント)<br/>- Service Worker (オフライン対応)<br/>- Web App Manifest (インストール対応)"]
     Worker["Cloudflare Worker (エッジランタイム)<br/>- worker/index.ts<br/>- /api/* ルートを処理"]
     GAS["Google Apps Script API<br/>- スプレッドシートからのデータ"]
     
@@ -26,6 +26,7 @@ graph TB
 - **開発環境**: `@cloudflare/vite-plugin` により、Vite開発サーバーがWorkerを統合して動作します
 - **ルーティング**: Worker (`worker/index.ts`) が `/api/*` パスを処理し、それ以外は静的アセットとして配信されます
 - **SPAモード**: `wrangler.jsonc` の `not_found_handling: "single-page-application"` により、クライアントサイドルーティングに対応しています
+- **PWA対応**: `vite-plugin-pwa` により、Service WorkerとWeb App Manifestが自動生成され、オフライン対応とインストール機能を提供します
 
 詳細なアーキテクチャは [docs/architecture.md](./docs/architecture.md) を参照してください。
 
@@ -104,6 +105,16 @@ worker/
 
 gas/
 └── Code.gs              # Google Apps Script
+
+public/
+└── vite.svg             # PWAアイコン（デフォルト）
+
+vite.config.ts           # Vite設定（VitePWAプラグイン含む）
+
+# ビルド時に自動生成されるPWAファイル（dist/client/）
+# - manifest.webmanifest  # Web App Manifest
+# - sw.js                 # Service Worker
+# - registerSW.js         # Service Worker登録スクリプト
 ```
 
 ## デプロイ
@@ -111,9 +122,12 @@ gas/
 `pnpm deploy` により以下が実行されます：
 1. TypeScript のビルド
 2. Vite による静的アセットのバンドル
-3. Wrangler によるCloudflare Workersへのデプロイ
+3. PWAファイルの生成（manifest.webmanifest、sw.js、registerSW.js）
+4. Wrangler によるCloudflare Workersへのデプロイ
 
 デプロイ先は `wrangler.jsonc` の `name: "expenses"` で指定されたWorker名になります。
+
+PWAファイルも自動的にデプロイされ、Service WorkerとWeb App Manifestが有効になります。
 
 ## 参考ドキュメント
 

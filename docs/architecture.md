@@ -18,11 +18,13 @@ graph TB
         Static["静的アセット配信<br/>（それ以外のパス）"]
     end
     
-    subgraph Frontend["Frontend (React SPA)"]
+    subgraph Frontend["Frontend (React SPA + PWA)"]
         Form["入力フォーム"]
         Chart1["総資産推移<br/>(面グラフ)"]
         Chart2["収支・利益<br/>(棒+折れ線)"]
         Chart3["カテゴリ別支出<br/>(積み上げ面)"]
+        SW["Service Worker<br/>(オフライン対応)"]
+        Manifest["Web App Manifest<br/>(インストール対応)"]
     end
     
     Spreadsheet -->|データ読み書き| GAS
@@ -47,6 +49,10 @@ graph TB
    - 選択可能な月は開始月から先々月まで、既存データがない月のみ
    - Date文字列を正規化して処理（GASから返されるDate文字列に対応）
    - すべての入力フィールド（カテゴリ別金額、残高）は必須で初期値は0
+6. **PWA**: Progressive Web Appとして動作
+   - Service Workerによるオフライン対応とアセットキャッシュ
+   - Web App Manifestによるインストール対応とスタンドアロンモード
+   - 自動更新機能（新しいバージョンが自動で適用される）
 
 ## データ設計
 
@@ -92,3 +98,35 @@ graph TB
 - **残高の優先表示**: `aggregateMonthlyData`関数で、B/Sシートに残高が設定されている月はその残高を直接使用します
 - **自動計算**: 残高が設定されていない月は、初期残高と累積収支から自動計算されます
 - **残高の更新**: フロントエンドの入力フォームから残高を追加・更新できます
+
+## PWA（Progressive Web App）機能
+
+このアプリケーションはPWAとして実装されており、以下の機能を提供します。
+
+### Service Worker
+
+- **オフライン対応**: Service Workerがアセット（JS、CSS、HTML、画像など）をキャッシュし、オフライン時でもアプリケーションを利用可能にします
+- **自動更新**: `registerType: 'autoUpdate'`により、新しいバージョンが自動で検出され、次回アクセス時に適用されます
+- **キャッシュ戦略**: Workboxを使用して、静的アセットはプリキャッシュ、外部リソース（フォントなど）はCacheFirst戦略でキャッシュします
+
+### Web App Manifest
+
+- **インストール対応**: ブラウザのアドレスバーにインストールアイコンが表示され、ホーム画面に追加できます
+- **スタンドアロンモード**: インストール後はブラウザUIなしでアプリケーションとして動作します
+- **テーマカラー**: アプリのテーマカラーと背景色を設定し、OSのUIと統合されます
+
+### 設定ファイル
+
+PWAの設定は `vite.config.ts` の `VitePWA` プラグインで管理されています：
+
+- **開発環境**: `devOptions.enabled: true`により、開発時でもPWA機能をテストできます
+- **マニフェスト**: アプリ名、説明、アイコン、表示モードなどを定義
+- **Workbox設定**: キャッシュパターン、ランタイムキャッシュ戦略を設定
+
+### 生成されるファイル
+
+ビルド時に以下のファイルが自動生成されます：
+
+- `manifest.webmanifest`: Web App Manifest（アプリのメタデータ）
+- `sw.js`: Service Worker（キャッシュ管理）
+- `registerSW.js`: Service Worker登録スクリプト（エントリーポイントに自動注入）
