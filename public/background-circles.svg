@@ -1,0 +1,28 @@
+<svg width="512" height="1024" viewBox="0 0 512 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="1024" fill="#F9F9FA"/>
+
+  <defs>
+    <filter id="softBlur" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <radialGradient id="warmYellow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 0) rotate(45) scale(260)">
+      <stop stop-color="#FCE47B"/>
+      <stop offset="1" stop-color="#F4C932"/>
+    </radialGradient>
+    <radialGradient id="softPeach" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 0) rotate(45) scale(180)">
+      <stop stop-color="#FBE9DD"/>
+      <stop offset="1" stop-color="#F0D5BF"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="86" cy="125" r="80" fill="url(#warmYellow)" opacity="0.9" filter="url(#softBlur)"/>
+  <circle cx="400" cy="548" r="113" fill="url(#warmYellow)" opacity="0.92" filter="url(#softBlur)"/>
+  <circle cx="473" cy="258" r="46" fill="url(#softPeach)" opacity="0.62"/>
+  <circle cx="30" cy="732" r="112" fill="url(#softPeach)" opacity="0.38"/>
+  <circle cx="311" cy="199" r="15" fill="#EFD9B7" opacity="0.85"/>
+  <circle cx="54" cy="308" r="17" fill="#F1C83D" opacity="0.86" filter="url(#softBlur)"/>
+  <circle cx="63" cy="453" r="26" fill="#F0DADF" opacity="0.68"/>
+  <circle cx="128" cy="584" r="16" fill="#E9D7BD" opacity="0.75"/>
+  <circle cx="486" cy="418" r="35" fill="#EDE7E0" opacity="0.64"/>
+  <circle cx="390" cy="117" r="10" fill="#F5DCDD" opacity="0.7"/>
+</svg>

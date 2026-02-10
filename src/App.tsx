@@ -36,8 +36,8 @@ function ViewModeSwitch({
       <div
         className="ios-switch-indicator"
         style={{
-          left: activeIndex === 0 ? '3px' : '50%',
-          width: 'calc(50% - 3px)',
+          left: activeIndex === 0 ? '4px' : '50%',
+          width: 'calc(50% - 4px)',
         }}
       />
       {/* オプションボタン */}
@@ -125,8 +125,8 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
-          <div className="mx-auto flex max-w-6xl items-center justify-between">
+        <header className="glass-header fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl px-4 py-3 md:w-[calc(100%-4rem)] md:px-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
                 <Wallet className="size-5 text-primary" />
@@ -135,7 +135,7 @@ function App() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
+        <main className="mx-auto max-w-6xl px-4 pt-28 pb-4 md:px-8 md:pt-32 md:pb-8">
           <div className="flex flex-col gap-6">
             <Skeleton className="h-10 w-48 mx-auto" />
             <Skeleton className="h-[300px] w-full rounded-xl" />
@@ -151,8 +151,8 @@ function App() {
   if (error) {
     return (
       <div className="min-h-screen">
-        <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
-          <div className="mx-auto flex max-w-6xl items-center justify-between">
+        <header className="glass-header fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl px-4 py-3 md:w-[calc(100%-4rem)] md:px-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
                 <Wallet className="size-5 text-primary" />
@@ -161,7 +161,7 @@ function App() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
+        <main className="mx-auto max-w-6xl px-4 pt-28 pb-4 md:px-8 md:pt-32 md:pb-8">
           <Alert variant="destructive" className="glass-card">
             <AlertCircle className="size-4" />
             <AlertDescription className="flex flex-col gap-4">
@@ -181,8 +181,8 @@ function App() {
   if (!data) {
     return (
       <div className="min-h-screen">
-        <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
-          <div className="mx-auto flex max-w-6xl items-center justify-between">
+        <header className="glass-header fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl px-4 py-3 md:w-[calc(100%-4rem)] md:px-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
                 <Wallet className="size-5 text-primary" />
@@ -191,7 +191,7 @@ function App() {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
+        <main className="mx-auto max-w-6xl px-4 pt-28 pb-4 md:px-8 md:pt-32 md:pb-8">
           <Alert className="glass-card">
             <AlertCircle className="size-4" />
             <AlertDescription className="flex flex-col gap-4">
@@ -210,8 +210,8 @@ function App() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="glass-header fixed top-0 left-0 right-0 z-50 px-4 py-4 md:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
+      <header className="glass-header fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl px-4 py-3 md:w-[calc(100%-4rem)] md:px-6">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
               <Wallet className="size-5 text-primary" />
@@ -252,7 +252,7 @@ function App() {
       </Dialog>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-4 pt-24 pb-4 md:px-8 md:pb-8">
+      <main className="mx-auto max-w-6xl px-4 pt-28 pb-4 md:px-8 md:pt-32 md:pb-8">
         {/* View Mode Switch - iOS style */}
         <div className="flex justify-start mb-6">
           <ViewModeSwitch value={viewMode} onChange={setViewMode} />
