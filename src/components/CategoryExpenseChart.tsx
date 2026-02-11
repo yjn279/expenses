@@ -14,6 +14,15 @@ import { formatCurrency, formatAxisLabel } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { PieChart } from 'lucide-react';
 import { GRADIENT_PALETTE } from '@/constants/chartColors';
+import {
+  CHART_AXIS_TICK,
+  CHART_GRID,
+  CHART_HEIGHT,
+  CHART_LEGEND_STYLE,
+  CHART_MARGIN,
+  CHART_TOOLTIP_CONTENT_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+} from '@/components/chartTheme';
 
 interface CategoryExpenseChartProps {
   data: MonthlyData[] | YearlyData[];
@@ -43,25 +52,24 @@ export function CategoryExpenseChart({
 
   return (
     <Card className="glass-card">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1">
         <CardTitle className="flex items-center gap-2 text-base font-medium">
           <PieChart className="size-4 text-primary" />
           カテゴリ別支出
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative rounded-lg overflow-hidden">
-          <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} vertical={false} />
+        <ResponsiveContainer width="100%" height={CHART_HEIGHT.tall}>
+          <AreaChart data={chartData} margin={CHART_MARGIN}>
+            <CartesianGrid {...CHART_GRID} />
             <XAxis
               dataKey="period"
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
               tickFormatter={formatAxisLabel}
@@ -74,19 +82,10 @@ export function CategoryExpenseChart({
                 }
                 return [formatCurrency(value), name];
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.6)',
-                borderRadius: 'var(--radius)',
-                boxShadow: '0 8px 16px 0 rgba(245, 184, 0, 0.12)',
-              }}
+              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+              contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             />
-            <Legend
-              wrapperStyle={{ fontSize: 12 }}
-            />
+            <Legend wrapperStyle={CHART_LEGEND_STYLE} />
             {categories.map((category, index) => (
               <Area
                 key={category}
@@ -95,12 +94,11 @@ export function CategoryExpenseChart({
                 stackId="1"
                 stroke={GRADIENT_PALETTE[index % GRADIENT_PALETTE.length]}
                 fill={GRADIENT_PALETTE[index % GRADIENT_PALETTE.length]}
-                fillOpacity={0.75}
+                fillOpacity={0.68}
               />
             ))}
           </AreaChart>
         </ResponsiveContainer>
-        </div>
       </CardContent>
     </Card>
   );

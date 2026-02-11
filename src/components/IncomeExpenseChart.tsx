@@ -16,6 +16,15 @@ import { formatCurrency, formatAxisLabel } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ArrowUpDown } from 'lucide-react';
 import { DUAL_PALETTE } from '@/constants/chartColors';
+import {
+  CHART_AXIS_TICK,
+  CHART_GRID,
+  CHART_HEIGHT,
+  CHART_LEGEND_STYLE,
+  CHART_MARGIN,
+  CHART_TOOLTIP_CONTENT_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+} from '@/components/chartTheme';
 
 interface IncomeExpenseChartProps {
   data: MonthlyData[] | YearlyData[];
@@ -46,25 +55,24 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
 
   return (
     <Card className="glass-card">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1">
         <CardTitle className="flex items-center gap-2 text-base font-medium">
           <ArrowUpDown className="size-4 text-primary" />
           収支推移
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative rounded-lg overflow-hidden">
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} vertical={false} />
+        <ResponsiveContainer width="100%" height={CHART_HEIGHT.standard}>
+          <ComposedChart data={chartData} margin={CHART_MARGIN}>
+            <CartesianGrid {...CHART_GRID} />
             <XAxis
               dataKey="period"
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
               tickFormatter={formatAxisLabel}
@@ -78,21 +86,14 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
                 const displayValue = name === 'expense' ? -value : value;
                 return [formatCurrency(displayValue), LABELS[name] || name];
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.6)',
-                borderRadius: 'var(--radius)',
-                boxShadow: '0 8px 16px 0 rgba(245, 184, 0, 0.12)',
-              }}
+              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+              contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             />
             <Legend
               formatter={(value: string) => LABELS[value] || value}
-              wrapperStyle={{ fontSize: 12 }}
+              wrapperStyle={CHART_LEGEND_STYLE}
             />
-            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} />
+            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.45} />
             <Bar
               dataKey="income"
               fill={DUAL_PALETTE.positive}
@@ -117,7 +118,6 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
             />
           </ComposedChart>
         </ResponsiveContainer>
-        </div>
       </CardContent>
     </Card>
   );

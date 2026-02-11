@@ -13,6 +13,14 @@ import { formatCurrency, formatAxisLabel } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { PRIMARY_CHART_COLOR, CHART_GRADIENTS } from '@/constants/chartColors';
+import {
+  CHART_AXIS_TICK,
+  CHART_GRID,
+  CHART_HEIGHT,
+  CHART_MARGIN,
+  CHART_TOOLTIP_CONTENT_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+} from '@/components/chartTheme';
 
 interface TotalAssetsChartProps {
   data: MonthlyData[] | YearlyData[];
@@ -32,31 +40,30 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
 
   return (
     <Card className="glass-card">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1">
         <CardTitle className="flex items-center gap-2 text-base font-medium">
           <TrendingUp className="size-4 text-primary" />
           総資産推移
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative rounded-lg overflow-hidden">
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={CHART_HEIGHT.standard}>
+          <AreaChart data={chartData} margin={CHART_MARGIN}>
             <defs>
               <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={CHART_GRADIENTS.primary.start.color} stopOpacity={CHART_GRADIENTS.primary.start.opacity} />
                 <stop offset="95%" stopColor={CHART_GRADIENTS.primary.end.color} stopOpacity={CHART_GRADIENTS.primary.end.opacity} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.4} vertical={false} />
+            <CartesianGrid {...CHART_GRID} />
             <XAxis
               dataKey="period"
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+              tick={CHART_AXIS_TICK}
               tickLine={false}
               axisLine={false}
               tickFormatter={formatAxisLabel}
@@ -69,15 +76,8 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
                 }
                 return [formatCurrency(value), '総資産'];
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.6)',
-                borderRadius: 'var(--radius)',
-                boxShadow: '0 8px 16px 0 rgba(245, 184, 0, 0.12)',
-              }}
+              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+              contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             />
             <Area
               type="monotone"
@@ -88,7 +88,6 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
             />
           </AreaChart>
         </ResponsiveContainer>
-        </div>
       </CardContent>
     </Card>
   );
