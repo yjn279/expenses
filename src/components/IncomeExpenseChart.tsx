@@ -15,15 +15,16 @@ import { isMonthlyData, isYearlyData, isNumber, isString } from '../utils/typeGu
 import { formatCurrency, formatAxisLabel } from '../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ArrowUpDown } from 'lucide-react';
-import { DUAL_PALETTE } from '@/constants/chartColors';
+import { CHART_GRADIENTS, DUAL_PALETTE, PRIMARY_CHART_COLOR } from '@/constants/chartColors';
 import {
-  CHART_AXIS_TICK,
+  CHART_AXIS,
   CHART_GRID,
   CHART_HEIGHT,
   CHART_LEGEND_STYLE,
   CHART_MARGIN,
   CHART_TOOLTIP_CONTENT_STYLE,
   CHART_TOOLTIP_LABEL_STYLE,
+  formatPeriodLabel,
 } from '@/components/chartTheme';
 
 interface IncomeExpenseChartProps {
@@ -47,6 +48,7 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
 
     return {
       period,
+      periodLabel: formatPeriodLabel(period, isMonthly),
       income: item.income,
       expense: -item.expense,
       profit: item.profit,
@@ -55,28 +57,36 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
 
   return (
     <Card className="glass-card">
-      <CardHeader className="pb-1">
-        <CardTitle className="flex items-center gap-2 text-base font-medium">
+      <CardHeader className="pb-0">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium sm:text-base">
           <ArrowUpDown className="size-4 text-primary" />
           収支推移
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-3">
         <ResponsiveContainer width="100%" height={CHART_HEIGHT.standard}>
-          <ComposedChart data={chartData} margin={CHART_MARGIN}>
+          <ComposedChart data={chartData} margin={CHART_MARGIN} stackOffset="sign" barCategoryGap="14%" barGap={1} barSize={36}>
+            <defs>
+              <linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="4%" stopColor={CHART_GRADIENTS.positive.start.color} stopOpacity={CHART_GRADIENTS.positive.start.opacity} />
+                <stop offset="96%" stopColor={CHART_GRADIENTS.positive.end.color} stopOpacity={CHART_GRADIENTS.positive.end.opacity} />
+              </linearGradient>
+              <linearGradient id="expenseFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="4%" stopColor={CHART_GRADIENTS.negative.end.color} stopOpacity={CHART_GRADIENTS.negative.end.opacity} />
+                <stop offset="96%" stopColor={CHART_GRADIENTS.negative.start.color} stopOpacity={CHART_GRADIENTS.negative.start.opacity} />
+              </linearGradient>
+            </defs>
             <CartesianGrid {...CHART_GRID} />
             <XAxis
-              dataKey="period"
-              tick={CHART_AXIS_TICK}
-              tickLine={false}
-              axisLine={false}
+              dataKey="periodLabel"
+              {...CHART_AXIS}
+              minTickGap={18}
             />
             <YAxis
-              tick={CHART_AXIS_TICK}
-              tickLine={false}
-              axisLine={false}
+              {...CHART_AXIS}
+              domain={['dataMin', 'dataMax']}
               tickFormatter={formatAxisLabel}
-              width={60}
+              width={56}
             />
             <Tooltip
               formatter={(value, name) => {
@@ -86,34 +96,46 @@ export function IncomeExpenseChart({ data, isMonthly }: IncomeExpenseChartProps)
                 const displayValue = name === 'expense' ? -value : value;
                 return [formatCurrency(displayValue), LABELS[name] || name];
               }}
+              labelFormatter={(_, payload) => {
+                const period = payload?.[0]?.payload?.period;
+                return typeof period === 'string' ? period : '';
+              }}
               labelStyle={CHART_TOOLTIP_LABEL_STYLE}
               contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             />
             <Legend
               formatter={(value: string) => LABELS[value] || value}
               wrapperStyle={CHART_LEGEND_STYLE}
+              iconType="circle"
             />
-            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.45} />
+            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} />
             <Bar
               dataKey="income"
-              fill={DUAL_PALETTE.positive}
+              stackId="cashflow"
+              fill="url(#incomeFill)"
               name="income"
-              radius={[4, 4, 0, 0]}
-              opacity={0.85}
+              stroke={DUAL_PALETTE.positive}
+              strokeOpacity={0}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={56}
             />
             <Bar
               dataKey="expense"
-              fill={DUAL_PALETTE.negative}
+              stackId="cashflow"
+              fill="url(#expenseFill)"
               name="expense"
-              radius={[0, 0, 4, 4]}
-              opacity={0.85}
+              stroke={DUAL_PALETTE.negative}
+              strokeOpacity={0}
+              radius={[6, 6, 0, 0]}
+              maxBarSize={56}
             />
             <Line
               type="monotone"
               dataKey="profit"
-              stroke={DUAL_PALETTE.neutral}
-              strokeWidth={2.5}
-              dot={{ r: 4, fill: DUAL_PALETTE.neutral }}
+              stroke={PRIMARY_CHART_COLOR}
+              strokeWidth={2.2}
+              dot={false}
+              activeDot={{ r: 4, fill: PRIMARY_CHART_COLOR, strokeWidth: 0 }}
               name="profit"
             />
           </ComposedChart>

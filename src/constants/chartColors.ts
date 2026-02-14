@@ -19,17 +19,21 @@ export const GRADIENT_PALETTE = [
   'hsl(var(--chart-series-10))',
 ] as const;
 
+export function getSeriesColor(index: number): string {
+  return GRADIENT_PALETTE[index % GRADIENT_PALETTE.length];
+}
+
 export const CHART_GRADIENTS = {
   primary: {
-    start: { color: PRIMARY_CHART_COLOR, opacity: 0.45 },
-    end: { color: PRIMARY_CHART_COLOR, opacity: 0.06 },
+    start: { color: PRIMARY_CHART_COLOR, opacity: 0.42 },
+    end: { color: PRIMARY_CHART_COLOR, opacity: 0.04 },
   },
   positive: {
-    start: { color: DUAL_PALETTE.positive, opacity: 0.38 },
-    end: { color: DUAL_PALETTE.positive, opacity: 0.06 },
+    start: { color: DUAL_PALETTE.positive, opacity: 0.34 },
+    end: { color: DUAL_PALETTE.positive, opacity: 0.05 },
   },
   negative: {
-    start: { color: DUAL_PALETTE.negative, opacity: 0.38 },
-    end: { color: DUAL_PALETTE.negative, opacity: 0.06 },
+    start: { color: DUAL_PALETTE.negative, opacity: 0.34 },
+    end: { color: DUAL_PALETTE.negative, opacity: 0.05 },
   },
 } as const;

@@ -8,7 +8,7 @@ interface KPISummaryPanelProps {
   viewMode: ViewMode;
 }
 
-const cardClass = 'glass-card rounded-2xl p-4 sm:p-5 min-w-0 flex flex-col gap-1.5';
+const cardClass = 'glass-card min-w-0 rounded-2xl flex flex-col gap-1.5';
 const trendUpClass = 'text-[hsl(var(--success))]';
 const trendDownClass = 'text-[hsl(var(--danger))]';
 
@@ -45,34 +45,35 @@ export function KPISummaryPanel({ data, viewMode }: KPISummaryPanelProps) {
   }, [data, viewMode]);
 
   const isProfitPositive = currentProfit >= 0;
+  const trendLabel = viewMode === 'monthly' ? '前月比' : '前年比';
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div className={cardClass}>
-        <div className="mb-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <DollarSign className="size-3.5 shrink-0" />
+    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className={`${cardClass} p-3 sm:p-4`}>
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <DollarSign className="size-3 shrink-0" />
           <span>総資産</span>
         </div>
-        <div className="truncate text-[var(--font-size-kpi)] leading-[var(--line-height-dense)] font-bold text-foreground">
+        <div className="truncate text-[var(--font-size-kpi)] leading-[var(--line-height-dense)] font-semibold text-foreground">
           {formatCurrency(totalAssets)}
         </div>
-        <div className="flex flex-wrap items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 text-[11px]">
           <TrendBadge value={assetsTrend} />
-          <span className="text-muted-foreground">前月比</span>
+          <span className="text-muted-foreground">{trendLabel}</span>
         </div>
       </div>
 
-      <div className={cardClass}>
-        <div className="mb-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <CreditCard className="size-3.5 shrink-0" />
+      <div className={`${cardClass} p-3 sm:p-4`}>
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <CreditCard className="size-3 shrink-0" />
           <span>{periodLabel}の収支</span>
         </div>
-        <div className={`truncate text-[var(--font-size-kpi)] leading-[var(--line-height-dense)] font-bold ${isProfitPositive ? trendUpClass : trendDownClass}`}>
+        <div className={`truncate text-[var(--font-size-kpi)] leading-[var(--line-height-dense)] font-semibold ${isProfitPositive ? trendUpClass : trendDownClass}`}>
           {isProfitPositive ? '+' : ''}
           {formatCurrency(currentProfit)}
         </div>
-        <div className="flex flex-wrap items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 text-[11px]">
           <TrendBadge value={profitTrend} />
-          <span className="text-muted-foreground">前月比</span>
+          <span className="text-muted-foreground">{trendLabel}</span>
         </div>
       </div>
     </div>

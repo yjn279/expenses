@@ -14,12 +14,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { PRIMARY_CHART_COLOR, CHART_GRADIENTS } from '@/constants/chartColors';
 import {
-  CHART_AXIS_TICK,
+  CHART_AXIS,
   CHART_GRID,
   CHART_HEIGHT,
   CHART_MARGIN,
   CHART_TOOLTIP_CONTENT_STYLE,
   CHART_TOOLTIP_LABEL_STYLE,
+  formatPeriodLabel,
 } from '@/components/chartTheme';
 
 interface TotalAssetsChartProps {
@@ -35,18 +36,22 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
       ? item.year
       : '';
 
-    return { period, totalAssets: item.totalAssets };
+    return {
+      period,
+      periodLabel: formatPeriodLabel(period, isMonthly),
+      totalAssets: item.totalAssets,
+    };
   });
 
   return (
     <Card className="glass-card">
-      <CardHeader className="pb-1">
-        <CardTitle className="flex items-center gap-2 text-base font-medium">
+      <CardHeader className="pb-0">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium sm:text-base">
           <TrendingUp className="size-4 text-primary" />
           総資産推移
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-3">
         <ResponsiveContainer width="100%" height={CHART_HEIGHT.standard}>
           <AreaChart data={chartData} margin={CHART_MARGIN}>
             <defs>
@@ -57,17 +62,14 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
             </defs>
             <CartesianGrid {...CHART_GRID} />
             <XAxis
-              dataKey="period"
-              tick={CHART_AXIS_TICK}
-              tickLine={false}
-              axisLine={false}
+              dataKey="periodLabel"
+              {...CHART_AXIS}
+              minTickGap={18}
             />
             <YAxis
-              tick={CHART_AXIS_TICK}
-              tickLine={false}
-              axisLine={false}
+              {...CHART_AXIS}
               tickFormatter={formatAxisLabel}
-              width={60}
+              width={56}
             />
             <Tooltip
               formatter={(value) => {
@@ -76,6 +78,10 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
                 }
                 return [formatCurrency(value), '総資産'];
               }}
+              labelFormatter={(_, payload) => {
+                const period = payload?.[0]?.payload?.period;
+                return typeof period === 'string' ? period : '';
+              }}
               labelStyle={CHART_TOOLTIP_LABEL_STYLE}
               contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             />
@@ -83,8 +89,9 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
               type="monotone"
               dataKey="totalAssets"
               stroke={PRIMARY_CHART_COLOR}
-              strokeWidth={2.5}
+              strokeWidth={2.25}
               fill="url(#colorAssets)"
+              activeDot={{ r: 4, fill: PRIMARY_CHART_COLOR, strokeWidth: 0 }}
             />
           </AreaChart>
         </ResponsiveContainer>

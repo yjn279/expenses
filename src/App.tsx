@@ -18,7 +18,7 @@ function ViewModeSwitch({ value, onChange }: { value: ViewMode; onChange: (value
   const options: { value: ViewMode; label: string }[] = [{ value: 'monthly', label: '月別' }, { value: 'yearly', label: '年別' }];
   return (
     <div className="ios-switch">
-      <div className="ios-switch-indicator" style={{ left: value === 'monthly' ? '4px' : '50%' }} />
+      <div className="ios-switch-indicator" style={{ left: value === 'monthly' ? '3px' : '50%' }} />
       {options.map((option) => (
         <button
           key={option.value}
@@ -132,9 +132,12 @@ function App() {
       <DashboardShell>
         <div className="dashboard-stack">
           <Skeleton className="mx-auto h-9 w-44" />
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-          <Skeleton className="h-[350px] w-full rounded-xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <div className="dashboard-chart-grid">
+            <Skeleton className="h-[280px] w-full rounded-xl" />
+            <Skeleton className="h-[280px] w-full rounded-xl" />
+          </div>
+          <Skeleton className="h-[340px] w-full rounded-xl" />
         </div>
       </DashboardShell>
     );
@@ -178,9 +181,11 @@ function App() {
       <div className="dashboard-stack">
         <ViewModeSwitch value={viewMode} onChange={setViewMode} />
         <KPISummaryPanel data={displayData.kpiData} viewMode={viewMode} />
-        <div className="dashboard-stack">
-          <TotalAssetsChart data={displayData.chartData} isMonthly={isMonthly} />
-          <IncomeExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
+        <div className="dashboard-charts">
+          <div className="dashboard-chart-grid">
+            <TotalAssetsChart data={displayData.chartData} isMonthly={isMonthly} />
+            <IncomeExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
+          </div>
           <CategoryExpenseChart data={displayData.chartData} categories={displayData.categories} isMonthly={isMonthly} />
         </div>
       </div>
