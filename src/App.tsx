@@ -81,13 +81,12 @@ function App() {
   const isMonthly = viewMode === 'monthly';
 
   const displayData = useMemo(() => {
-    if (!data) return { chartData: [], categories: [], kpiData: [] };
+    if (!data) return { chartData: [], kpiData: [] };
     if (isMonthly) {
-      return { chartData: data.monthlyData.slice(-12), categories: data.categories, kpiData: data.monthlyData };
+      return { chartData: data.monthlyData.slice(-12), kpiData: data.monthlyData };
     }
     return {
       chartData: data.yearlyData,
-      categories: data.categories,
       kpiData: data.yearlyData.map((item) => ({
         month: `${item.year}-01` as MonthString,
         income: item.income,
@@ -182,14 +181,14 @@ function App() {
         <ViewModeSwitch value={viewMode} onChange={setViewMode} />
         <KPISummaryPanel data={displayData.kpiData} viewMode={viewMode} />
         <div className="dashboard-charts">
-          <div className="dashboard-chart-grid">
-            <TotalAssetsChart data={displayData.chartData} isMonthly={isMonthly} />
-            <IncomeExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
-          </div>
-          <CategoryExpenseChart data={displayData.chartData} categories={displayData.categories} isMonthly={isMonthly} />
+        <div className="dashboard-chart-grid">
+          <TotalAssetsChart data={displayData.chartData} isMonthly={isMonthly} />
+          <IncomeExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
         </div>
+        <CategoryExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
       </div>
-    </DashboardShell>
+    </div>
+  </DashboardShell>
   );
 }
 

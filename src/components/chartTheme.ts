@@ -30,6 +30,13 @@ export const CHART_GRID = {
   vertical: false,
 } as const;
 
+export const CHART_BAR_LAYOUT = {
+  barCategoryGap: '14%',
+  barGap: 1,
+  barSize: 36,
+  maxBarSize: 56,
+} as const;
+
 export const CHART_TOOLTIP_LABEL_STYLE: CSSProperties = {
   color: 'hsl(var(--foreground))',
   fontWeight: 600,
@@ -49,6 +56,14 @@ export const CHART_LEGEND_STYLE: CSSProperties = {
   color: 'hsl(var(--muted-foreground) / 0.95)',
   paddingTop: 8,
 };
+
+export function formatTooltipPeriodLabel(
+  _: unknown,
+  payload?: ReadonlyArray<{ payload?: { period?: string } }>
+): string {
+  const period = payload?.[0]?.payload?.period;
+  return typeof period === 'string' ? period : '';
+}
 
 export function formatPeriodLabel(period: string, isMonthly: boolean): string {
   if (!isMonthly) return `${period}年`;

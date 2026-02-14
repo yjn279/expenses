@@ -10,7 +10,6 @@ import {
 import type { MonthlyData, YearlyData } from '../types';
 import { isMonthlyData, isYearlyData, isNumber } from '../utils/typeGuards';
 import { formatCurrency, formatAxisLabel } from '../utils/format';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { PRIMARY_CHART_COLOR, CHART_GRADIENTS } from '@/constants/chartColors';
 import {
@@ -20,8 +19,10 @@ import {
   CHART_MARGIN,
   CHART_TOOLTIP_CONTENT_STYLE,
   CHART_TOOLTIP_LABEL_STYLE,
+  formatTooltipPeriodLabel,
   formatPeriodLabel,
 } from '@/components/chartTheme';
+import { ChartCard } from '@/components/ChartCard';
 
 interface TotalAssetsChartProps {
   data: MonthlyData[] | YearlyData[];
@@ -44,58 +45,34 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
   });
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="pb-0">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium sm:text-base">
-          <TrendingUp className="size-4 text-primary" />
-          総資産推移
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-3">
-        <ResponsiveContainer width="100%" height={CHART_HEIGHT.standard}>
-          <AreaChart data={chartData} margin={CHART_MARGIN}>
-            <defs>
-              <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={CHART_GRADIENTS.primary.start.color} stopOpacity={CHART_GRADIENTS.primary.start.opacity} />
-                <stop offset="95%" stopColor={CHART_GRADIENTS.primary.end.color} stopOpacity={CHART_GRADIENTS.primary.end.opacity} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid {...CHART_GRID} />
-            <XAxis
-              dataKey="periodLabel"
-              {...CHART_AXIS}
-              minTickGap={18}
-            />
-            <YAxis
-              {...CHART_AXIS}
-              tickFormatter={formatAxisLabel}
-              width={56}
-            />
-            <Tooltip
-              formatter={(value) => {
-                if (!isNumber(value)) {
-                  return ['', ''];
-                }
-                return [formatCurrency(value), '総資産'];
-              }}
-              labelFormatter={(_, payload) => {
-                const period = payload?.[0]?.payload?.period;
-                return typeof period === 'string' ? period : '';
-              }}
-              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
-              contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
-            />
-            <Area
-              type="monotone"
-              dataKey="totalAssets"
-              stroke={PRIMARY_CHART_COLOR}
-              strokeWidth={2.25}
-              fill="url(#colorAssets)"
-              activeDot={{ r: 4, fill: PRIMARY_CHART_COLOR, strokeWidth: 0 }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+    <ChartCard title="総資産推移" icon={TrendingUp}>
+      <ResponsiveContainer width="100%" height={CHART_HEIGHT.standard}>
+        <AreaChart data={chartData} margin={CHART_MARGIN}>
+          <defs>
+            <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={CHART_GRADIENTS.primary.start.color} stopOpacity={CHART_GRADIENTS.primary.start.opacity} />
+              <stop offset="95%" stopColor={CHART_GRADIENTS.primary.end.color} stopOpacity={CHART_GRADIENTS.primary.end.opacity} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid {...CHART_GRID} />
+          <XAxis dataKey="periodLabel" {...CHART_AXIS} minTickGap={18} />
+          <YAxis {...CHART_AXIS} tickFormatter={formatAxisLabel} width={56} />
+          <Tooltip
+            formatter={(value) => (isNumber(value) ? [formatCurrency(value), '総資産'] : ['', ''])}
+            labelFormatter={formatTooltipPeriodLabel}
+            labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+            contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
+          />
+          <Area
+            type="monotone"
+            dataKey="totalAssets"
+            stroke={PRIMARY_CHART_COLOR}
+            strokeWidth={2.25}
+            fill="url(#colorAssets)"
+            activeDot={{ r: 4, fill: PRIMARY_CHART_COLOR, strokeWidth: 0 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartCard>
   );
 }
