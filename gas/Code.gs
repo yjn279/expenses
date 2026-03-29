@@ -213,11 +213,9 @@ function getBalances(ss) {
     const monthValue = row[0];
     const balanceValue = row[1];
 
-    if (monthValue && typeof monthValue === 'string' && /^\d{4}-\d{2}$/.test(monthValue)) {
-      const month = formatMonth(monthValue);
-      if (month) {
-        balances[month] = Number(balanceValue) || 0;
-      }
+    const month = formatMonth(monthValue);
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      balances[month] = Number(balanceValue) || 0;
     }
   }
 
