@@ -1,13 +1,13 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import type { TransactionInput, MonthString, BalanceInput } from '../types';
+import { useEffect, useState, type FormEvent } from 'react';
+import { AlertCircle, CheckCircle2, Loader2, TrendingDown, TrendingUp, Wallet, type LucideIcon } from 'lucide-react';
+import type { BalanceInput, MonthString, TransactionInput } from '../types';
 import { CategoryAmountInput } from './CategoryAmountInput';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, CheckCircle2, AlertCircle, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
 interface BulkTransactionFormProps {
   expenseCategories: string[];
@@ -19,12 +19,27 @@ interface BulkTransactionFormProps {
 const MAX_AMOUNT = 1_000_000_000;
 const MIN_CATEGORY_LENGTH = 1;
 const MAX_CATEGORY_LENGTH = 50;
+const ZERO = '0';
 
-function isValidMonthString(
-  value: string,
-  validMonths: MonthString[]
-): value is MonthString {
+type AmountMap = Record<string, string>;
+type TransactionType = TransactionInput['type'];
+
+interface CategorySection {
+  key: TransactionType;
+  title: string;
+  icon: LucideIcon;
+  iconClass: string;
+  categories: string[];
+  values: AmountMap;
+  onChange: (category: string, value: string) => void;
+}
+
+function isValidMonthString(value: string, validMonths: MonthString[]): value is MonthString {
   return validMonths.includes(value as MonthString);
+}
+
+function createAmountMap(categories: string[], previous: AmountMap = {}): AmountMap {
+  return Object.fromEntries(categories.map((category) => [category, previous[category] ?? ZERO]));
 }
 
 function validateCategory(category: string): string | null {
@@ -34,36 +49,26 @@ function validateCategory(category: string): string | null {
   return null;
 }
 
-function validateAmount(
-  amountStr: string,
-  fieldName: string
-): { isValid: boolean; error: string | null; amount: number | null } {
-  if (!amountStr || amountStr === '') {
-    return { isValid: false, error: `${fieldName}を入力してください`, amount: null };
-  }
-
+function validateAmount(amountStr: string, fieldName: string): { error: string | null; amount: number | null } {
+  if (!amountStr) return { error: `${fieldName}を入力してください`, amount: null };
   const amount = parseInt(amountStr, 10);
-  if (isNaN(amount)) {
-    return { isValid: false, error: `${fieldName}は数値で入力してください`, amount: null };
-  }
-
-  if (amount < 0) {
-    return { isValid: false, error: `${fieldName}は0円以上で入力してください`, amount: null };
-  }
-
-  if (amount > MAX_AMOUNT) {
-    return { isValid: false, error: `${fieldName}は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`, amount: null };
-  }
-
-  return { isValid: true, error: null, amount };
+  if (isNaN(amount)) return { error: `${fieldName}は数値で入力してください`, amount: null };
+  if (amount < 0) return { error: `${fieldName}は0円以上で入力してください`, amount: null };
+  if (amount > MAX_AMOUNT) return { error: `${fieldName}は${MAX_AMOUNT.toLocaleString()}円以下で入力してください`, amount: null };
+  return { error: null, amount };
 }
 
-function createInitialAmounts(categories: string[]): Record<string, string> {
-  const amounts: Record<string, string> = {};
-  for (const cat of categories) {
-    amounts[cat] = '0';
+function buildTransactions(month: MonthString, categories: string[], amounts: AmountMap, type: TransactionType) {
+  const transactions: TransactionInput[] = [];
+  for (const category of categories) {
+    const categoryError = validateCategory(category);
+    if (categoryError) return { error: categoryError, transactions: [] };
+
+    const { error, amount } = validateAmount(amounts[category], category);
+    if (error || amount === null) return { error, transactions: [] };
+    transactions.push({ month, category, type, amount });
   }
-  return amounts;
+  return { error: null, transactions };
 }
 
 export function BulkTransactionForm({
@@ -72,153 +77,85 @@ export function BulkTransactionForm({
   selectableMonths,
   onSubmit,
 }: BulkTransactionFormProps) {
-  const [month, setMonth] = useState<MonthString | ''>(
-    selectableMonths.length > 0 ? selectableMonths[0] : ''
-  );
-
-  const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>(() =>
-    createInitialAmounts(expenseCategories)
-  );
-  const [incomeAmounts, setIncomeAmounts] = useState<Record<string, string>>(() =>
-    createInitialAmounts(incomeCategories)
-  );
-  const [balance, setBalance] = useState<string>('0');
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [month, setMonth] = useState<MonthString | ''>(selectableMonths[0] ?? '');
+  const [expenseAmounts, setExpenseAmounts] = useState<AmountMap>(() => createAmountMap(expenseCategories));
+  const [incomeAmounts, setIncomeAmounts] = useState<AmountMap>(() => createAmountMap(incomeCategories));
+  const [balance, setBalance] = useState(ZERO);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
+  const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    setExpenseAmounts((prev) => {
-      const updated = createInitialAmounts(expenseCategories);
-      for (const cat of expenseCategories) {
-        if (prev[cat] !== undefined) {
-          updated[cat] = prev[cat];
-        }
-      }
-      return updated;
-    });
-  }, [expenseCategories]);
+  useEffect(() => setExpenseAmounts((previous) => createAmountMap(expenseCategories, previous)), [expenseCategories]);
+  useEffect(() => setIncomeAmounts((previous) => createAmountMap(incomeCategories, previous)), [incomeCategories]);
 
-  useEffect(() => {
-    setIncomeAmounts((prev) => {
-      const updated = createInitialAmounts(incomeCategories);
-      for (const cat of incomeCategories) {
-        if (prev[cat] !== undefined) {
-          updated[cat] = prev[cat];
-        }
-      }
-      return updated;
-    });
-  }, [incomeCategories]);
+  const setAmount = (setter: React.Dispatch<React.SetStateAction<AmountMap>>) =>
+    (category: string, value: string) => setter((previous) => ({ ...previous, [category]: value }));
 
-  const handleExpenseChange = (category: string, value: string) => {
-    setExpenseAmounts((prev) => ({ ...prev, [category]: value }));
-  };
+  const sections = [
+    {
+      key: 'expense',
+      title: '支出',
+      icon: TrendingDown,
+      iconClass: 'text-destructive',
+      categories: expenseCategories,
+      values: expenseAmounts,
+      onChange: setAmount(setExpenseAmounts),
+    } satisfies CategorySection,
+    {
+      key: 'income',
+      title: '収入',
+      icon: TrendingUp,
+      iconClass: 'text-[hsl(var(--success))]',
+      categories: incomeCategories,
+      values: incomeAmounts,
+      onChange: setAmount(setIncomeAmounts),
+    } satisfies CategorySection,
+  ].filter((section) => section.categories.length > 0);
 
-  const handleIncomeChange = (category: string, value: string) => {
-    setIncomeAmounts((prev) => ({ ...prev, [category]: value }));
-  };
+  const hasCategories = sections.length > 0;
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError(null);
     setSuccess(false);
 
-    if (!month || !selectableMonths.includes(month)) {
-      setError('有効な月を選択してください');
-      return;
-    }
+    if (!month || !selectableMonths.includes(month)) return setError('有効な月を選択してください');
 
-    const validMonth = month as MonthString;
+    const expenseResult = buildTransactions(month, expenseCategories, expenseAmounts, 'expense');
+    if (expenseResult.error) return setError(expenseResult.error);
 
-    const transactions: TransactionInput[] = [];
+    const incomeResult = buildTransactions(month, incomeCategories, incomeAmounts, 'income');
+    if (incomeResult.error) return setError(incomeResult.error);
 
-    function processCategories(
-      categories: string[],
-      amounts: Record<string, string>,
-      type: TransactionInput['type']
-    ): boolean {
-      for (const category of categories) {
-        const categoryError = validateCategory(category);
-        if (categoryError) {
-          setError(categoryError);
-          return false;
-        }
-
-        const validation = validateAmount(amounts[category], category);
-        if (!validation.isValid) {
-          setError(validation.error!);
-          return false;
-        }
-
-        transactions.push({
-          month: validMonth,
-          category,
-          type,
-          amount: validation.amount!,
-        });
-      }
-      return true;
-    }
-
-    if (!processCategories(expenseCategories, expenseAmounts, 'expense')) {
-      return;
-    }
-
-    if (!processCategories(incomeCategories, incomeAmounts, 'income')) {
-      return;
-    }
-
-    const balanceValidation = validateAmount(balance, '残高');
-    if (!balanceValidation.isValid) {
-      setError(balanceValidation.error!);
-      return;
-    }
-
-    const balanceInput: BalanceInput = {
-      month: validMonth,
-      balance: balanceValidation.amount!,
-    };
+    const { error: balanceError, amount: validatedBalance } = validateAmount(balance, '残高');
+    if (balanceError || validatedBalance === null) return setError(balanceError);
 
     setSubmitting(true);
     try {
-      await onSubmit(transactions, balanceInput);
+      await onSubmit([...expenseResult.transactions, ...incomeResult.transactions], { month, balance: validatedBalance });
       setSuccess(true);
-      setExpenseAmounts(createInitialAmounts(expenseCategories));
-      setIncomeAmounts(createInitialAmounts(incomeCategories));
-      setBalance('0');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'エラーが発生しました');
+      setExpenseAmounts(createAmountMap(expenseCategories));
+      setIncomeAmounts(createAmountMap(incomeCategories));
+      setBalance(ZERO);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'エラーが発生しました');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const hasCategories =
-    expenseCategories.length > 0 || incomeCategories.length > 0;
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Month and Balance */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="bulk-month">月</Label>
-          <Select
-            value={month}
-            onValueChange={(value) => {
-              if (isValidMonthString(value, selectableMonths)) {
-                setMonth(value);
-              }
-            }}
-          >
+          <Select value={month} onValueChange={(value) => isValidMonthString(value, selectableMonths) && setMonth(value)}>
             <SelectTrigger id="bulk-month" className="w-full">
               <SelectValue placeholder="月を選択" />
             </SelectTrigger>
             <SelectContent>
-              {selectableMonths.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
+              {selectableMonths.map((value) => (
+                <SelectItem key={value} value={value}>{value}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -236,13 +173,11 @@ export function BulkTransactionForm({
               min="0"
               max={MAX_AMOUNT}
               value={balance}
-              onChange={(e) => setBalance(e.target.value)}
+              onChange={(event) => setBalance(event.target.value)}
               className="pr-8"
               required
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              円
-            </span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">円</span>
           </div>
         </div>
       </div>
@@ -252,57 +187,32 @@ export function BulkTransactionForm({
       {!hasCategories ? (
         <Alert>
           <AlertCircle className="size-4" />
-          <AlertDescription>
-            カテゴリがありません。P/Lシートにデータを追加してください。
-          </AlertDescription>
+          <AlertDescription>カテゴリがありません。P/Lシートにデータを追加してください。</AlertDescription>
         </Alert>
       ) : (
         <div className="space-y-6">
-          {/* Expense Categories */}
-          {expenseCategories.length > 0 && (
-            <div className="space-y-3">
+          {sections.map(({ key, title, icon: Icon, iconClass, categories, values, onChange }) => (
+            <div key={key} className="space-y-3">
               <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <TrendingDown className="size-4 text-destructive" />
-                支出
+                <Icon className={`size-4 ${iconClass}`} />
+                {title}
               </h4>
               <div className="space-y-2">
-                {expenseCategories.map((category) => (
+                {categories.map((category) => (
                   <CategoryAmountInput
-                    key={`expense-${category}`}
+                    key={`${key}-${category}`}
                     category={category}
-                    value={expenseAmounts[category] || '0'}
-                    onChange={handleExpenseChange}
+                    value={values[category] ?? ZERO}
+                    onChange={onChange}
                     required
                   />
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Income Categories */}
-          {incomeCategories.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <TrendingUp className="size-4 text-emerald-600" />
-                収入
-              </h4>
-              <div className="space-y-2">
-                {incomeCategories.map((category) => (
-                  <CategoryAmountInput
-                    key={`income-${category}`}
-                    category={category}
-                    value={incomeAmounts[category] || '0'}
-                    onChange={handleIncomeChange}
-                    required
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* Error Alert */}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
@@ -310,22 +220,14 @@ export function BulkTransactionForm({
         </Alert>
       )}
 
-      {/* Success Alert */}
       {success && (
         <Alert variant="success">
           <CheckCircle2 className="size-4" />
-          <AlertDescription>
-            家計簿を記録しました
-          </AlertDescription>
+          <AlertDescription>家計簿を記録しました</AlertDescription>
         </Alert>
       )}
 
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={submitting || !hasCategories}
-      >
+      <Button type="submit" className="w-full" disabled={submitting || !hasCategories}>
         {submitting ? (
           <>
             <Loader2 className="size-4 animate-spin" />

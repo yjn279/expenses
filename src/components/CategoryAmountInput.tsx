@@ -9,29 +9,16 @@ interface CategoryAmountInputProps {
   required?: boolean;
 }
 
-export function CategoryAmountInput({
-  category,
-  value,
-  onChange,
-  required = false,
-}: CategoryAmountInputProps) {
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    if (newValue === '' || /^\d+$/.test(newValue)) {
-      onChange(category, newValue);
-    }
-  };
-
+export function CategoryAmountInput({ category, value, onChange, required = false }: CategoryAmountInputProps) {
   const inputId = `category-${category.replace(/\s+/g, '-')}`;
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value;
+    if (nextValue === '' || /^\d+$/.test(nextValue)) onChange(category, nextValue);
+  };
 
   return (
     <div className="flex items-center gap-3">
-      <Label
-        htmlFor={inputId}
-        className="min-w-[100px] flex-shrink-0 text-sm font-normal text-foreground"
-      >
-        {category}
-      </Label>
+      <Label htmlFor={inputId} className="min-w-[100px] flex-shrink-0 text-[var(--font-size-body)] font-normal text-foreground">{category}</Label>
       <div className="relative flex-1">
         <Input
           id={inputId}
@@ -44,9 +31,7 @@ export function CategoryAmountInput({
           className="pr-8 text-right"
           required={required}
         />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-          円
-        </span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--font-size-label)] text-muted-foreground">円</span>
       </div>
     </div>
   );
