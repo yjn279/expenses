@@ -107,7 +107,7 @@ function getSettings(ss) {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0] === 'initialBalance' || row[0] === '初期残高') {
-      initialBalance = Number(row[1]) || 0;
+      initialBalance = parseAmountValue(row[1]);
     }
     if (row[0] === 'startMonth' || row[0] === '開始月') {
       startMonth = formatMonth(row[1]);
@@ -215,11 +215,31 @@ function getBalances(ss) {
 
     const month = formatMonth(monthValue);
     if (month && /^\d{4}-\d{2}$/.test(month)) {
-      balances[month] = Number(balanceValue) || 0;
+      balances[month] = parseAmountValue(balanceValue);
     }
   }
 
   return balances;
+}
+
+/**
+ * 金額セルの値を数値に変換
+ * - 数値はそのまま利用
+ * - 文字列はカンマ/空白を除去して数値化
+ */
+function parseAmountValue(value) {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.replace(/[,¥\s]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**
