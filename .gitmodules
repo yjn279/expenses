@@ -1,3 +1,0 @@
-[submodule "submodule-expenses"]
-	path = submodule-expenses
-	url = https://github.com/yjn279/expenses.git
