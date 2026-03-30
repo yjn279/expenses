@@ -233,7 +233,7 @@ function parseAmountValue(value) {
   }
 
   if (typeof value === 'string') {
-    const normalized = value.replace(/[,¥\s]/g, '');
+    const normalized = value.replace(/[,¥￥\s]/g, '');
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
   }
