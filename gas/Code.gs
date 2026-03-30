@@ -107,7 +107,7 @@ function getSettings(ss) {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (row[0] === 'initialBalance' || row[0] === '初期残高') {
-      initialBalance = Number(row[1]) || 0;
+      initialBalance = parseAmountValue(row[1]);
     }
     if (row[0] === 'startMonth' || row[0] === '開始月') {
       startMonth = formatMonth(row[1]);
@@ -213,15 +213,33 @@ function getBalances(ss) {
     const monthValue = row[0];
     const balanceValue = row[1];
 
-    if (monthValue && typeof monthValue === 'string' && /^\d{4}-\d{2}$/.test(monthValue)) {
-      const month = formatMonth(monthValue);
-      if (month) {
-        balances[month] = Number(balanceValue) || 0;
-      }
+    const month = formatMonth(monthValue);
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      balances[month] = parseAmountValue(balanceValue);
     }
   }
 
   return balances;
+}
+
+/**
+ * 金額セルの値を数値に変換
+ * - 数値はそのまま利用
+ * - 文字列はカンマ/空白を除去して数値化
+ */
+function parseAmountValue(value) {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.replace(/[,¥￥\s]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**
@@ -274,26 +292,7 @@ function aggregateMonthlyData(transactions, settings, balances) {
   const result = sortedMonths.map(function(month) {
     const data = monthlyMap[month];
     const profit = data.income - data.expense;
-    
-    let totalAssets;
-    if (balances[month] !== undefined) {
-      totalAssets = balances[month];
-    } else {
-      let previousBalance = settings.initialBalance;
-      for (let i = 0; i < sortedMonths.length; i++) {
-        if (sortedMonths[i] === month) {
-          break;
-        }
-        const prevMonth = sortedMonths[i];
-        if (balances[prevMonth] !== undefined) {
-          previousBalance = balances[prevMonth];
-        } else {
-          const prevData = monthlyMap[prevMonth];
-          previousBalance = previousBalance + (prevData.income - prevData.expense);
-        }
-      }
-      totalAssets = previousBalance + profit;
-    }
+    const totalAssets = balances[month];
 
     return {
       month: data.month,
@@ -323,7 +322,7 @@ function aggregateYearlyData(monthlyData) {
         income: 0,
         expense: 0,
         categoryExpense: {},
-        lastTotalAssets: 0
+        lastTotalAssets: undefined
       };
     }
 

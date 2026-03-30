@@ -34,8 +34,8 @@ export interface MonthlyData {
   expense: number;
   /** 収支（収入 - 支出、円） */
   profit: number;
-  /** 総資産（円） */
-  totalAssets: number;
+  /** 総資産（円、B/S未設定月は未定義） */
+  totalAssets?: number;
   /** カテゴリ別支出 */
   categoryExpense: CategoryExpense;
 }
@@ -52,8 +52,8 @@ export interface YearlyData {
   expense: number;
   /** 収支（収入 - 支出、円） */
   profit: number;
-  /** 総資産（円） */
-  totalAssets: number;
+  /** 総資産（円、B/S未設定年は未定義） */
+  totalAssets?: number;
   /** カテゴリ別支出 */
   categoryExpense: CategoryExpense;
 }
