@@ -30,6 +30,7 @@ interface TotalAssetsChartProps {
 }
 
 export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
+  const hasTotalAssetsValue = data.some((item) => isNumber(item.totalAssets));
   const chartData = data.map((item) => {
     const period = isMonthly && isMonthlyData(item)
       ? item.month
@@ -40,7 +41,7 @@ export function TotalAssetsChart({ data, isMonthly }: TotalAssetsChartProps) {
     return {
       period,
       periodLabel: formatPeriodLabel(period, isMonthly),
-      totalAssets: item.totalAssets,
+      totalAssets: hasTotalAssetsValue ? item.totalAssets : 0,
     };
   });
 

@@ -292,26 +292,7 @@ function aggregateMonthlyData(transactions, settings, balances) {
   const result = sortedMonths.map(function(month) {
     const data = monthlyMap[month];
     const profit = data.income - data.expense;
-    
-    let totalAssets;
-    if (balances[month] !== undefined) {
-      totalAssets = balances[month];
-    } else {
-      let previousBalance = settings.initialBalance;
-      for (let i = 0; i < sortedMonths.length; i++) {
-        if (sortedMonths[i] === month) {
-          break;
-        }
-        const prevMonth = sortedMonths[i];
-        if (balances[prevMonth] !== undefined) {
-          previousBalance = balances[prevMonth];
-        } else {
-          const prevData = monthlyMap[prevMonth];
-          previousBalance = previousBalance + (prevData.income - prevData.expense);
-        }
-      }
-      totalAssets = previousBalance + profit;
-    }
+    const totalAssets = balances[month];
 
     return {
       month: data.month,
@@ -341,7 +322,7 @@ function aggregateYearlyData(monthlyData) {
         income: 0,
         expense: 0,
         categoryExpense: {},
-        lastTotalAssets: 0
+        lastTotalAssets: undefined
       };
     }
 

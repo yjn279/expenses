@@ -32,11 +32,13 @@ export function KPISummaryPanel({ data, viewMode }: KPISummaryPanelProps) {
     const previous = data.length > 1 ? data[data.length - 2] : null;
     const monthLabel = `${parseInt(latest.month.split('-')[1], 10)}月`;
     const yearLabel = `${latest.month.split('-')[0]}年`;
-    const assetsTrend = previous && previous.totalAssets !== 0 ? ((latest.totalAssets - previous.totalAssets) / previous.totalAssets) * 100 : 0;
+    const latestTotalAssets = latest.totalAssets ?? 0;
+    const previousTotalAssets = previous?.totalAssets ?? 0;
+    const assetsTrend = previous && previousTotalAssets !== 0 ? ((latestTotalAssets - previousTotalAssets) / previousTotalAssets) * 100 : 0;
     const profitTrend = previous && previous.profit !== 0 ? ((latest.profit - previous.profit) / Math.abs(previous.profit)) * 100 : 0;
 
     return {
-      totalAssets: latest.totalAssets,
+      totalAssets: latestTotalAssets,
       assetsTrend,
       currentProfit: latest.profit,
       profitTrend,
