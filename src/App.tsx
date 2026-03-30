@@ -17,13 +17,13 @@ import { AlertCircle, PlusCircle, RefreshCw, Wallet } from 'lucide-react';
 function ViewModeSwitch({ value, onChange }: { value: ViewMode; onChange: (value: ViewMode) => void }) {
   const options: { value: ViewMode; label: string }[] = [{ value: 'monthly', label: '月別' }, { value: 'yearly', label: '年別' }];
   return (
-    <div className="ios-switch">
-      <div className="ios-switch-indicator" style={{ left: value === 'monthly' ? '3px' : '50%' }} />
+    <div className="sun-switch">
+      <div className="sun-switch-indicator" style={{ left: value === 'monthly' ? '4px' : '50%' }} />
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
-          className="ios-switch-option"
+          className="sun-switch-option"
           data-active={value === option.value}
           onClick={() => onChange(option.value)}
         >
@@ -36,13 +36,16 @@ function ViewModeSwitch({ value, onChange }: { value: ViewMode; onChange: (value
 
 function DashboardHeader({ action }: { action?: ReactNode }) {
   return (
-    <header className="glass-header fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-2xl px-4 py-3 md:w-[calc(100%-4rem)] md:px-6">
-      <div className="flex items-center justify-between gap-3">
+    <header className="aurora-header fixed top-4 left-1/2 z-50 w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-3xl px-4 py-3 md:w-[calc(100%-4rem)] md:px-6">
+      <div className="flex items-center justify-between gap-3 md:gap-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-            <Wallet className="size-5 text-primary" />
+          <div className="brand-badge">
+            <Wallet className="size-5 text-[hsl(var(--foreground))]" />
           </div>
-          <h1 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">家計簿ダッシュボード</h1>
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">Golden Ledger</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">家計簿ダッシュボード</h1>
+          </div>
         </div>
         {action}
       </div>
@@ -52,7 +55,9 @@ function DashboardHeader({ action }: { action?: ReactNode }) {
 
 function DashboardShell({ action, children }: { action?: ReactNode; children: ReactNode }) {
   return (
-    <div className="min-h-screen">
+    <div className="sunset-shell min-h-screen">
+      <div className="sunset-orb sunset-orb-left" aria-hidden />
+      <div className="sunset-orb sunset-orb-right" aria-hidden />
       <DashboardHeader action={action} />
       <main className="dashboard-main">{children}</main>
     </div>
@@ -61,7 +66,7 @@ function DashboardShell({ action, children }: { action?: ReactNode; children: Re
 
 function RetryAlert({ message, onRetry, destructive = false }: { message: string; onRetry: () => void; destructive?: boolean }) {
   return (
-    <Alert variant={destructive ? 'destructive' : 'default'} className="glass-card">
+    <Alert variant={destructive ? 'destructive' : 'default'} className="panel-card">
       <AlertCircle className="size-4" />
       <AlertDescription className="flex flex-col gap-4">
         <span>{message}</span>
@@ -180,15 +185,15 @@ function App() {
       <div className="dashboard-stack">
         <ViewModeSwitch value={viewMode} onChange={setViewMode} />
         <KPISummaryPanel data={displayData.kpiData} viewMode={viewMode} />
-        <div className="dashboard-charts">
-        <div className="dashboard-chart-grid">
-          <TotalAssetsChart data={displayData.chartData} isMonthly={isMonthly} />
-          <IncomeExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
+        <div className="dashboard-charts reveal-stack">
+          <div className="dashboard-chart-grid">
+            <TotalAssetsChart data={displayData.chartData} isMonthly={isMonthly} />
+            <IncomeExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
+          </div>
+          <CategoryExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
         </div>
-        <CategoryExpenseChart data={displayData.chartData} isMonthly={isMonthly} />
       </div>
-    </div>
-  </DashboardShell>
+    </DashboardShell>
   );
 }
 
